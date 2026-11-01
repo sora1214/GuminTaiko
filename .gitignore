@@ -1,0 +1,31 @@
+# ビルド・作業用
+build/
+build-release/
+build-installer/
+dist/
+.claude/
+.vscode/
+*.png.tmp
+/*.png
+
+# 秘密鍵（署名に使う。絶対に上げない）
+keys/
+
+# 遊んだ記録・設定・足した曲・変換ずみの音
+Backup/
+Songs/
+ogg/
+Data/cache/
+Data/x64/fumen/
+Data/x64/sound/*.ogg
+Data/x64/sound/*.mp3
+Data/x64/sound/*.wav
+Data/x64/datatable/songs_index/
+
+# 実行ファイルは、アップデートの配布物（update/）の中のものだけ上げる
+*.exe
+*.dll
+*.a
+!update/**/*.exe
+!update/**/*.dll
+!third_party/raylib/lib/*.a

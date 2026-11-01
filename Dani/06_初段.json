@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "level": 6,
+  "name": "初段",
+  "songs": [
+    {
+      "tja": "夏祭り.tja",
+      "course": "oni",
+      "hidden": false
+    },
+    {
+      "tja": "ハッピーシンセサイザ.tja",
+      "course": "oni",
+      "hidden": false
+    },
+    {
+      "tja": "怪獣.tja",
+      "course": "oni",
+      "hidden": false
+    }
+  ],
+  "gauge": {
+    "red": 97,
+    "gold": 100
+  },
+  "exams": [
+    {
+      "type": "good",
+      "range": "total",
+      "red": [
+        814
+      ],
+      "gold": [
+        862
+      ]
+    },
+    {
+      "type": "bad",
+      "range": "total",
+      "red": [
+        36
+      ],
+      "gold": [
+        18
+      ]
+    },
+    {
+      "type": "roll",
+      "range": "total",
+      "red": [
+        141
+      ],
+      "gold": [
+        158
+      ]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "level": 20,
+  "name": "外伝",
+  "songs": [
+    {
+      "tja": "創作譜面/時限式狂騒ワンダーランド/時限式狂騒ワンダーランド.tja",
+      "course": "ura",
+      "hidden": true
+    },
+    {
+      "tja": "創作譜面/第六天魔王(裏)がバカにされなかった世界線/第六天魔王(裏)がバカにされなかった世界線.tja",
+      "course": "ura",
+      "hidden": true
+    },
+    {
+      "tja": "創作譜面/Rough： CHA0Z/Rough・・CHA0Z.tja",
+      "course": "ura",
+      "hidden": true
+    }
+  ],
+  "gauge": {
+    "red": 100,
+    "gold": 100
+  },
+  "exams": [
+    {
+      "type": "ok",
+      "range": "total",
+      "red": [
+        10
+      ],
+      "gold": [
+        1
+      ]
+    },
+    {
+      "type": "bad",
+      "range": "total",
+      "red": [
+        3
+      ],
+      "gold": [
+        1
+      ]
+    },
+    {
+      "type": "roll",
+      "range": "song",
+      "red": [
+        127,
+        116,
+        16
+      ],
+      "gold": [
+        143,
+        157,
+        22
+      ]
+    }
+  ]
+}

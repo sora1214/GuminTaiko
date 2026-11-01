@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "level": 7,
+  "name": "二段",
+  "songs": [
+    {
+      "tja": "メズマライザー.tja",
+      "course": "oni",
+      "hidden": false
+    },
+    {
+      "tja": "only my railgun.tja",
+      "course": "oni",
+      "hidden": false
+    },
+    {
+      "tja": "カルメン 組曲一番終曲.tja",
+      "course": "oni",
+      "hidden": false
+    }
+  ],
+  "gauge": {
+    "red": 97,
+    "gold": 100
+  },
+  "exams": [
+    {
+      "type": "good",
+      "range": "total",
+      "red": [
+        1036
+      ],
+      "gold": [
+        1091
+      ]
+    },
+    {
+      "type": "bad",
+      "range": "total",
+      "red": [
+        35
+      ],
+      "gold": [
+        17
+      ]
+    },
+    {
+      "type": "roll",
+      "range": "total",
+      "red": [
+        189
+      ],
+      "gold": [
+        210
+      ]
+    }
+  ]
+}
