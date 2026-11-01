@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<root id="Root" width="96" height="30" top-menu="TopMenu" param-color="Color/White" param-default-color="Color/White">
+    <!--
+        ■ 初期化画面
+    -->
+    <menu id="TopMenu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="ＤＥＶＩＣＥ ＣＨＥＣＫ"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="25">
+            <select-item label="ＤＯＮＧＬＥ"    param-offset-x="33" id="DongleItem" replace-text="0:未初期化, 1:@Color/Lime;正常, 2:@Anim/Blink;初期化中, 3:@Color/Yellow;警告, 4:@Color/Gray;無効, -2:@Color/Red;エラー"     select-skip="True"/> <break-item/>
+            <select-item label="ＢＡＣＫＵＰ"    param-offset-x="33" id="BackItem" replace-text="0:未初期化, 1:@Color/Lime;正常, 2:@Anim/Blink;初期化中, 3:@Color/Yellow;警告, 4:@Color/Gray;無効, -2:@Color/Red;エラー"     select-skip="True"/> <break-item/>
+            <select-item label="ＵＳ Ｉ／Ｏ"    param-offset-x="33" id="UsioItem" replace-text="0:未初期化, 1:@Color/Lime;正常, 2:@Anim/Blink;初期化中, 3:@Color/Yellow;警告, 4:@Color/Gray;無効, -2:@Color/Red;エラー"     select-skip="True"/> <break-item/>
+            <select-item label="ＣＲＥＤＩＴ"     param-offset-x="33" id="CreditItem" replace-text="0:未初期化, 1:@Color/Lime;正常, 2:@Anim/Blink;初期化中, 3:@Color/Yellow;警告, 4:@Color/Gray;無効, -2:@Color/Red;エラー"     select-skip="True"/> <break-item/>
+            <select-item label="ＮＥＴＷＯＲＫ"  param-offset-x="33" id="NetworkItem" replace-text="0:未初期化, 1:@Color/Lime;正常, 2:@Anim/Blink;初期化中, 3:@Color/Yellow;警告, 4:@Color/Gray;無効, -2:@Color/Red;エラー"     select-skip="True"/> <break-item/>
+            <select-item label="ＵＰＤＡＴＥＲ"   param-offset-x="33" id="UpdaterItem" replace-text="0:未初期化, 1:@Color/Lime;正常, 2:@Anim/Blink;初期化中, 3:@Color/Yellow;警告, 4:@Color/Gray;無効, -2:@Color/Red;エラー"     select-skip="True"/> <break-item/>
+    <!--
+            <select-item label="ＧＡＭＥ ＳＥＲＶＥＲ"   param-offset-x="33" id="GameServerItem" replace-text="0:未初期化, 1:@Color/Lime;正常, 2:@Anim/Blink;初期化中, 3:@Color/Yellow;警告, 4:@Color/Gray;無効, -2:@Color/Red;エラー"     select-skip="True"/> <break-item/>
+    -->
+            <select-item label="ＣＡＲＤ ＲＥＡＤＥＲ－ＷＲＩＴＥＲ"  param-offset-x="33" id="CardRWItem" replace-text="0:未初期化, 1:@Color/Lime;正常, 2:@Anim/Blink;初期化中, 3:@Color/Yellow;警告, 4:@Color/Gray;無効, -2:@Color/Red;エラー"     select-skip="True"/> <break-item/>
+            <select-item label="ＣＯＤＥＲＥＡＤＥＲ"  param-offset-x="33" id="QrReaderItem" replace-text="0:未初期化, 1:@Color/Lime;正常, 2:@Anim/Blink;初期化中, 3:@Color/Yellow;警告, 4:@Color/Gray;無効, -2:@Color/Red;エラー"     select-skip="True"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+			<text-item label="" param-offset-x="-14" prefix="S12108-1-NA-MPR0-" id="RomVersionItem" param-color="Color/Yellow" default="A00"/> <break-item/>
+        </layout>
+	</menu>
+</root>
