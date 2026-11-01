@@ -415,7 +415,9 @@ struct App {
         std::error_code ec;
         fs::remove(index, ec);
         if (!Fetch("update.idx", index, error)) {
-            SetUpdText("更新元につながりません: " + error);
+            // 404: GitHub のリポジトリが非公開（raw は認証なしでは読めない）か、アップデートをまだ上げていない
+            SetUpdText(error.find("404") != std::string::npos ? "更新元が見つかりません（GitHub のリポジトリが非公開か、アップデートが上がっていません）"
+                                                              : "更新元につながりません（通信を確かめてください）");
             Log("update check: " + error);
             upd = Upd::Error;
             return;
