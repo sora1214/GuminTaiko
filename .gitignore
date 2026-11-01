@@ -29,3 +29,4 @@ Data/x64/datatable/songs_index/
 !update/**/*.exe
 !update/**/*.dll
 !third_party/raylib/lib/*.a
+Data/x64/TestBin.bin
