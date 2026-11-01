@@ -156,7 +156,10 @@ int Update(const fs::path& appDir, const fs::path& outDir, const std::string& ve
             continue;
         }
         fs::create_directories(dest.parent_path(), ec);
+        // 前に置いたものが読み取り専用（配置したアプリの実行ファイルは読み取り専用）だと、上書きできない
+        if (fs::exists(dest, ec)) fs::permissions(dest, fs::perms::owner_write, fs::perm_options::add, ec);
         fs::copy_file(source, dest, fs::copy_options::overwrite_existing, ec);
+        if (!ec) fs::permissions(dest, fs::perms::owner_write, fs::perm_options::add, ec);   // コピーも読み取り専用になるので、外しておく
         if (ec) {
             std::fprintf(stderr, "%s にコピーできません: %s\n", dest.u8string().c_str(), ec.message().c_str());
             return 1;
@@ -175,6 +178,7 @@ int Update(const fs::path& appDir, const fs::path& outDir, const std::string& ve
         if (!keep.count(relative)) stale.push_back(it->path());
     }
     for (const fs::path& path : stale) {
+        fs::permissions(path, fs::perms::owner_write, fs::perm_options::add, ec);
         fs::remove(path, ec);
         ++removed;
     }
