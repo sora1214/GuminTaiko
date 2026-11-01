@@ -10,6 +10,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -348,6 +349,7 @@ struct App {
     uint64_t updTotal = 0;                  // 取ってくる大きさ
     std::atomic<uint64_t> updBytes{0};
     std::atomic<bool> updCancel{false};
+    std::atomic<unsigned> updNonce{0};
     std::thread updWorker;
     bool relaunch = false;                  // ランチャー自身が新しくなったので、終わったら開き直す
     bool autoUpdate = false;                // 確認用（--update 1）: 確認から適用まで自動で行って、結果をログに書く
@@ -384,7 +386,12 @@ struct App {
     bool Fetch(const std::string& relative, const fs::path& dest, std::string& error) {
         std::error_code ec;
         fs::create_directories(dest.parent_path(), ec);
-        if (IsUrl(updateSource)) return LauncherWin::Download(updateSource + "/" + PercentEncode(relative), dest.u8string(), &updBytes, &updCancel, error);
+        // GitHub の raw は、同じ URL を 5 分ほど覚えている（アップデートを出した直後に、古いファイルが返ってきて「壊れています」になる）。
+        // 毎回ちがう「?cb=」をつけて、覚えられた古いものではなく、いまのものを取る（raw は、この値を無視する）
+        if (IsUrl(updateSource)) {
+            return LauncherWin::Download(updateSource + "/" + PercentEncode(relative) + "?cb=" + std::to_string(std::time(nullptr)) + "-" + std::to_string(updNonce++),
+                                         dest.u8string(), &updBytes, &updCancel, error);
+        }
         const fs::path source = fs::u8path(updateSource) / fs::u8path(relative);
         if (!fs::exists(source, ec)) {
             error = "更新元にありません: " + relative;
