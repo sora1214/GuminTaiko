@@ -1,0 +1,726 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<root id="Root" width="96" height="30" top-menu="TopMenu" shutdown-menu="ShutdownMenu" test-sw-off-menu="TestSwOffMenu">
+    <!--
+        ■ トップメニュー
+    -->
+    <menu id="TopMenu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="ＭＥＮＵ"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <menu-item label="ＣＯＩＮ ＯＰＴＩＯＮＳ"                    menu="CoinOptionsMenu"/>    <break-item/>
+            <menu-item label="ＧＡＭＥ ＯＰＴＩＯＮＳ"                    menu="GameOptionsMenu"/>    <break-item/>
+            <menu-item label="ＮＥＴＷＯＲＫ ＯＰＴＩＯＮＳ"              menu="NetworkMenu"/>        <break-item/>
+            <menu-item label="ＣＡＲＤ ＲＥＡＤＥＲ－ＷＲＩＴＥＲ ＴＥＳＴ"       menu="CardRWTestMenu"/>         <break-item/>
+            <menu-item label="Ｉ／Ｏ ＴＥＳＴ"                            menu="IoTestMenu"/>         <break-item/>
+            <menu-item label="ＭＯＮＩＴＯＲ ＴＥＳＴ"                    menu="MonitorTestMenu"/>    <break-item/>
+            <menu-item label="ＳＯＵＮＤ ＴＥＳＴ"                        menu="SoundTestMenu"/>      <break-item/>
+            <menu-item label="ＢＯＯＫＫＥＥＰＩＮＧ" id="BookkeepingItem" menu="BookkeepingMenu"/>    <break-item/>
+            <menu-item label="ＯＴＨＥＲＳ"                                menu="OthersMenu"/>         <break-item/>
+            <menu-item label="ＳＯＦＴＷＡＲＥ ＵＰＤＡＴＥ"              menu="SoftwareUpdateMenu"/> <break-item/>
+
+            <break-item/>
+            <text-item label="ＬＡＳＴ ＧＡＭＥ ＳＴＡＴＵＳ"/>               <break-item/>
+            <!--text-item label="　ＬＥＦＴ ＣＲＥＤＩＴ" id="LeftCreditItem"/-->
+            <!--text-item label="　ＵＳＥ ＣＲＥＤＩＴ"   id="UseCreditItem"/-->
+            <!--text-item label="　ＳＴＡＧＥ"             id="StageItem"/-->
+            <select-item label="　ＬＥＦＴ ＣＲＥＤＩＴ" param-offset-x="23" id="LeftCreditItem" select-skip="True" param-color="Color/White"/> <break-item/>
+            <select-item label="　ＵＳＥ ＣＲＥＤＩＴ"   param-offset-x="23" id="UseCreditItem"  select-skip="True" param-color="Color/White"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ コインオプション
+    -->
+    <menu id="CoinOptionsMenu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="   　　ＣＯＩＮ ＯＰＴＩＯＮＳ"/> <break-item/>
+            <break-item/>
+            <data-item data="HeaderTextData" param-offset-x="-15"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <select-item label="ＣＯＩＮ ＶＡＬＵＥ" disable="True/ItemFreePlay:1" param-offset-x="20" prefix="１ ＣＯＩＮ ＡＳ " format="%2d" suffix="ＣＲＥＤＩＴ（Ｓ）" group="Setting" id="CoinValueItem" max="9"  min="1" default="1"/> <break-item/>
+            <select-item label="１Ｐ ＧＡＭＥ ＣＯＳＴ" disable="True/ItemFreePlay:1" param-offset-x="19" format="%2d" suffix="ＣＲＥＤＩＴ（Ｓ）" group="Setting" id="1PGameCostItem" max="19" min="1" default="2"/> <break-item/>
+            <select-item label="２Ｐ ＧＡＭＥ ＣＯＳＴ" disable="True/ItemFreePlay:1" param-offset-x="19" format="%2d" suffix="ＣＲＥＤＩＴ（Ｓ）" group="Setting" id="2PGameCostItem" max="19" min="1" default="2"/> <break-item/>
+            <select-item label="ＦＲＥＥ ＰＬＡＹ"        param-offset-x="20" replace-text="0:ＯＦＦ, 1:ＯＮ"    group="Setting" id="ItemFreePlay"     max="1"  min="0" default="0"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="TopMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ ゲームオプション
+    -->
+    <menu id="GameOptionsMenu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="   　　ＧＡＭＥ ＯＰＴＩＯＮＳ"/> <break-item/>
+            <break-item/>
+            <data-item data="HeaderTextData" param-offset-x="-15"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <select-item label="ＮＵＭＢＥＲ ＯＦ ＳＴＡＧＥ（Ｓ）" param-offset-x="25" format="%2d" group="Setting" id="NumberOfStageItem"  max="4"  min="1" default="2"/> <break-item/>
+            <menu-item label="ＣＬＯＳＥ ＴＩＭＥ ＳＥＴＴＩＮＧ" menu="CloseTimeSettingMenu"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="TopMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ 閉店時刻の設定
+    -->
+    <menu id="CloseTimeSettingMenu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="       　　 　ＣＬＯＳＥ ＴＩＭＥ ＳＥＴＴＩＮＧ"/> <break-item/>
+            <break-item/>
+            <data-item data="HeaderTextData" param-offset-x="-15"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <select-item label="ＳＣＨＥＤＵＬＥ ＴＹＰＥ" param-offset-x="30" replace-text="0:ＯＦＦ, 1:ＷＥＥＫ, 2:ＤＡＹ" group="Setting"  id="ScheduleTypeItem" max="2" min="0" default="1" auto-next="False/ScheduleTypeItem:0"/> <break-item/>
+
+            <!-- ＤＡＹ -->
+            <select-item label="　　　　　　ＨＯＵＲ：" replace-text="27:ＡＬＬ" group="Setting"  id="HourItem" max="27" min="19" default="24"          disable="True/ScheduleTypeItem:!2"                  invisible="True/ScheduleTypeItem:!2"                  select-skip="True"                         auto-enter="True" auto-next="True" param-offset-x="26"/>
+            <select-item label="　　　　　　　　　　　　　ＭＩＮ："            group="Setting"  id="MinItem"  max="55" min="0"  default="0" delta="5" disable="True/(ScheduleTypeItem:!2 or HourItem:27)" invisible="True/(ScheduleTypeItem:!2 or HourItem:27)" select-skip="True" next="ScheduleTypeItem" auto-enter="True" auto-next="True" param-offset-x="40"/>
+
+            <!-- ＷＥＥＫ -->
+            <select-item label="　　　　ＳＵＮ　ＨＯＵＲ：" replace-text="27:ＡＬＬ" group="Setting"  id="SunHourItem" max="27" min="19" default="24"          disable="True/ScheduleTypeItem:!1"                     invisible="True/ScheduleTypeItem:!1"                     select-skip="True" auto-enter="True" auto-next="True" param-offset-x="26"/>
+            <select-item label="　　　　　　　　　　　　　ＭＩＮ："            group="Setting"  id="SunMinItem"  max="55" min="0"  default="0" delta="5" disable="True/(ScheduleTypeItem:!1 or SunHourItem:27)" invisible="True/(ScheduleTypeItem:!1 or SunHourItem:27)" select-skip="True" auto-enter="True" auto-next="True" param-offset-x="40"/>
+            <break-item/>
+            <select-item label="　　　　ＭＯＮ　ＨＯＵＲ：" replace-text="27:ＡＬＬ" group="Setting"  id="MonHourItem" max="27" min="19" default="24"          disable="True/ScheduleTypeItem:!1"                     invisible="True/ScheduleTypeItem:!1"                     select-skip="True" auto-enter="True" auto-next="True" param-offset-x="26"/>
+            <select-item label="　　　　　　　　　　　　　ＭＩＮ："            group="Setting"  id="MonMinItem"  max="55" min="0"  default="0" delta="5" disable="True/(ScheduleTypeItem:!1 or MonHourItem:27)" invisible="True/(ScheduleTypeItem:!1 or MonHourItem:27)" select-skip="True" auto-enter="True" auto-next="True" param-offset-x="40"/>
+            <break-item/>
+            <select-item label="　　　　ＴＵＥ　ＨＯＵＲ：" replace-text="27:ＡＬＬ" group="Setting"  id="TueHourItem" max="27" min="19" default="24"          disable="True/ScheduleTypeItem:!1"                     invisible="True/ScheduleTypeItem:!1"                     select-skip="True" auto-enter="True" auto-next="True" param-offset-x="26"/>
+            <select-item label="　　　　　　　　　　　　　ＭＩＮ："            group="Setting"  id="TueMinItem"  max="55" min="0"  default="0" delta="5" disable="True/(ScheduleTypeItem:!1 or TueHourItem:27)" invisible="True/(ScheduleTypeItem:!1 or TueHourItem:27)" select-skip="True" auto-enter="True" auto-next="True" param-offset-x="40"/>
+            <break-item/>
+            <select-item label="　　　　ＷＥＤ　ＨＯＵＲ：" replace-text="27:ＡＬＬ" group="Setting"  id="WedHourItem" max="27" min="19" default="24"          disable="True/ScheduleTypeItem:!1"                     invisible="True/ScheduleTypeItem:!1"                     select-skip="True" auto-enter="True" auto-next="True" param-offset-x="26"/>
+            <select-item label="　　　　　　　　　　　　　ＭＩＮ："            group="Setting"  id="WedMinItem"  max="55" min="0"  default="0" delta="5" disable="True/(ScheduleTypeItem:!1 or WedHourItem:27)" invisible="True/(ScheduleTypeItem:!1 or WedHourItem:27)" select-skip="True" auto-enter="True" auto-next="True" param-offset-x="40"/>
+            <break-item/>
+            <select-item label="　　　　ＴＨＵ　ＨＯＵＲ：" replace-text="27:ＡＬＬ" group="Setting"  id="ThuHourItem" max="27" min="19" default="24"          disable="True/ScheduleTypeItem:!1"                     invisible="True/ScheduleTypeItem:!1"                     select-skip="True" auto-enter="True" auto-next="True" param-offset-x="26"/>
+            <select-item label="　　　　　　　　　　　　　ＭＩＮ："            group="Setting"  id="ThuMinItem"  max="55" min="0"  default="0" delta="5" disable="True/(ScheduleTypeItem:!1 or ThuHourItem:27)" invisible="True/(ScheduleTypeItem:!1 or ThuHourItem:27)" select-skip="True" auto-enter="True" auto-next="True" param-offset-x="40"/>
+            <break-item/>
+            <select-item label="　　　　ＦＲＩ　ＨＯＵＲ：" replace-text="27:ＡＬＬ" group="Setting"  id="FriHourItem" max="27" min="19" default="24"          disable="True/ScheduleTypeItem:!1"                     invisible="True/ScheduleTypeItem:!1"                     select-skip="True" auto-enter="True" auto-next="True" param-offset-x="26"/>
+            <select-item label="　　　　　　　　　　　　　ＭＩＮ："            group="Setting"  id="FriMinItem"  max="55" min="0"  default="0" delta="5" disable="True/(ScheduleTypeItem:!1 or FriHourItem:27)" invisible="True/(ScheduleTypeItem:!1 or FriHourItem:27)" select-skip="True" auto-enter="True" auto-next="True" param-offset-x="40"/>
+            <break-item/>
+            <select-item label="　　　　ＳＡＴ　ＨＯＵＲ：" replace-text="27:ＡＬＬ" group="Setting"  id="SatHourItem" max="27" min="19" default="24"          disable="True/ScheduleTypeItem:!1"                     invisible="True/ScheduleTypeItem:!1"                     select-skip="True" auto-enter="True" auto-next="True"                         param-offset-x="26"/>
+            <select-item label="　　　　　　　　　　　　　ＭＩＮ："            group="Setting"  id="SatMinItem"  max="55" min="0"  default="0" delta="5" disable="True/(ScheduleTypeItem:!1 or SatHourItem:27)" invisible="True/(ScheduleTypeItem:!1 or SatHourItem:27)" select-skip="True" auto-enter="True" auto-next="True" next="ScheduleTypeItem" param-offset-x="40"/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="GameOptionsMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+	
+    <!--
+        ■ 時刻の設定
+    -->
+    <menu id="ClockSetting2Menu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　　ＣＬＯＣＫ ＳＥＴＴＩＮＧ"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <date-item      label="ＲＥＣＥＮＴＲＹ ＴＩＭＥ：" id="RecentryTime2Item" param-offset-x="1" param-offset-y="1"/> <break-item/>
+            <break-item/>
+            <set-clock-item label="ＣＨＡＮＧＥ ＴＯ："         id="ChangeTo2Item"     param-offset-x="1" param-offset-y="1"/> <break-item/>
+            <break-item/>
+            <msg-item label="ＳＥＴ" msg="ClockSetting"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="CloseTimeSettingMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ カードリーダーライターテスト
+    -->
+    <menu id="CardRWTestMenu" msg="MsgCardRWTest">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　　　ＣＡＲＤ ＲＥＡＤＥＲ－ＷＲＩＴＥＲ ＴＥＳＴ"/> <break-item/>
+            <break-item/>
+    <!--
+                <data-item data="HeaderTextData" param-offset-x="-15"/> <break-item/>
+    -->
+        </layout>
+        <layout type="Center" padding-x="23">
+            <menu-item label="ＣＡＲＤ Ｒ／Ｗ ＨＡＲＤＷＡＲＥ ＴＥＳＴ" menu="CardRWHardwareTestMenu"/> <break-item/>
+			<cmd-item label="ＣＡＲＤ Ｒ／Ｗ ＬＡＭＰ ＴＥＳＴ" id="CmdCardRWLampTestStart" cmd-type="Trigger" auto-next="True"/>
+			<select-item id="ItemCardRWLampTest" param-offset-x="40" replace-text="0:@Color/White;ＯＦＦ@Color/Default;,1:@Color/Red;ＯＮ@Color/Default;" select-skip="True" auto-next="True" auto-enter="True" max="0" min="0"/> <break-item/>
+			<cmd-item id="CmdCardRWLampTestEnd" cmd-type="Sync" invisible="True" select-skip="True" auto-enter="True" auto-next="True" next="CmdCardRWLampTestStart"/>
+			<cmd-item label="ＣＡＲＤ Ｒ／Ｗ ＳＯＵＮＤ ＴＥＳＴ" param-offset-x="40" id="CmdCardRWSoundTest" cmd-text="@Color/White;ＯＦＦ@Color/Default;,@Color/Red;ＯＮ@Color/Default;,@Color/White;ＯＦＦ@Color/Default;"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="TopMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ カードリーダーライターハードウェアテスト
+    -->
+    <menu id="CardRWHardwareTestMenu" msg="MsgCardRWHWTest">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　　ＣＡＲＤ Ｒ／Ｗ ＨＡＲＤＷＡＲＥ ＴＥＳＴ"/> <break-item/>
+            <break-item/>
+     <!--
+                <data-item data="HeaderTextData" param-offset-x="-15"/> <break-item/>
+    -->
+        </layout>
+        <layout type="Center" padding-x="23">
+            <cmd-item label="ＴＥＳＴ ＳＴＡＲＴ" id="CmdCardRWHWTest"/> <break-item/>
+            <break-item/>
+            <break-item/>
+			<text-item id="ItemCardRWHWTest" param-offset-x="20"/><break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="CardRWTestMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+	
+    <!--
+        ■ Ｉ/Ｏテスト
+    -->
+    <menu id="IoTestMenu" msg="MsgIoTest">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　Ｉ／Ｏ ＴＥＳＴ"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <menu-item label="ＳＷＩＴＣＨ ＴＥＳＴ" menu="SwitchTestUsioMenu"/> <break-item/>
+            <menu-item label="ＴＡＩＫＯ ＴＥＳＴ"       menu="TaikoTestMenu"/> <break-item/>
+            <menu-item label="ＬＡＭＰ ＴＥＳＴ"     menu="LampTestMenu"/>   <break-item/>
+            <menu-item label="ＣＯＤＥＲＥＡＤＥＲ ＴＥＳＴ"     menu="CodeReaderTestMenu"/>   <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="TopMenu"/> <break-item/>
+            <break-item/>
+            <break-item/>
+            <select-item label="ＵＳＩＯ ＰＣＢ： " id="UsioConnect" select-skip="True" /> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ Ｉ/Ｏテスト / スイッチテスト（USIO）
+    -->
+    <menu id="SwitchTestUsioMenu" msg="MsgSwitchTest" param-default-color="Color/Red" param-color="Color/White" menu-cmd="(Sw/Up and Sw/Enter):IoTestMenu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　ＳＷＩＴＣＨ ＴＥＳＴ"/> <break-item/>
+            <break-item/>
+            <text-item label="@Color/Red;　 ＯＮ：ＲＥＤ@Color/Default;"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+          <select-item label="ＣＯＩＮ" param-offset-x="35" id="ItemSwTestCoin" select-skip="True" /><break-item/>
+          <select-item label="ＳＥＲＶＩＣＥ" param-offset-x="35" id="ItemSwTestService" replace-text="0:@Color/White;ＯＦＦ@Color/Default;, 1:@Color/Red;ＯＮ@Color/Default;" select-skip="True" /><break-item/>
+          <select-item label="ＴＥＳＴ" param-offset-x="35" id="ItemSwTestTest" replace-text="0:@Color/White;ＯＦＦ@Color/Default;, 1:@Color/Red;ＯＮ@Color/Default;" select-skip="True" /><break-item/>
+          <select-item label="ＳＥＬＥＣＴ（ＵＰ／ＤＯＷＮ）" param-offset-x="35" id="ItemSwTestSelectUp" replace-text="0:@Color/White;ＯＦＦ@Color/Default;, 1:@Color/Red;ＯＮ@Color/Default;" select-skip="True" />
+          <select-item param-offset-x="44"         id="ItemSwTestSelectDown"  prefix="／" replace-text="0:@Color/White;ＯＦＦ@Color/Default;, 1:@Color/Red;ＯＮ@Color/Default;" select-skip="True" /><break-item/>
+          <select-item label="ＥＮＴＥＲ" param-offset-x="35" id="ItemSwTestEnter" replace-text="0:@Color/White;ＯＦＦ@Color/Default;, 1:@Color/Red;ＯＮ@Color/Default;" select-skip="True" /><break-item/>
+
+          <break-item/>
+        </layout>
+        <layout type="Footer">
+            <text-item label="ＵＰ ＳＥＬＥＣＴ ＳＷ ＋ ＥＮＴＥＲ ＳＷ：ＥＸＩＴ" param-offset-x="25" />
+        </layout>
+    </menu>
+
+    <!--
+        ■ 太鼓テスト
+    -->
+    <menu id="TaikoTestMenu" msg="MsgTaikoTest">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　    ＴＡＩＫＯ ＴＥＳＴ"/> <break-item/>
+            <break-item/>
+            <text-item label="@Color/Lime;　　　ＤＥＦＡＵＬＴ ＩＮ ＧＲＥＥＮ@Color/Default;"/>
+        </layout>
+        <layout type="Center" padding-x="20">
+          <text-item label="TaikoDon1pWeakLimit" id="TaikoDon1pWeakLimitItem" invisible="True" />
+          <text-item label="TaikoDon2pWeakLimit" id="TaikoDon2pWeakLimitItem" invisible="True" />
+          <text-item label="TaikoDon1pStrongLimit" id="TaikoDon1pStrongLimitItem" invisible="True" />
+          <text-item label="TaikoDon2pStrongLimit" id="TaikoDon2pStrongLimitItem" invisible="True" />
+          <text-item label="TaikoKatsu1pWeakLimit" id="TaikoKatsu1pWeakLimitItem" invisible="True" />
+          <text-item label="TaikoKatsu2pWeakLimit" id="TaikoKatsu2pWeakLimitItem" invisible="True" />
+          <text-item label="TaikoKatsu1pStrongLimit" id="TaikoKatsu1pStrongLimitItem" invisible="True" />
+          <text-item label="TaikoKatsu2pStrongLimit" id="TaikoKatsu2pStrongLimitItem" invisible="True" />
+
+          <select-item label="　１Ｐ　面　　　　　　"    group="Setting"  id="TaikoDon1pWeakItem" loop="False" max="99"  min="1" default="5" upper-limit="TaikoDon1pWeakLimitItem" param-offset-x="18" next="TaikoDon1pStrongItem"/>
+          <select-item label="　　　　　　　　　　　２Ｐ　面　　　　"    group="Setting"  id="TaikoDon2pWeakItem" loop="False" max="99"  min="1" default="5" upper-limit="TaikoDon2pWeakLimitItem" param-offset-x="45" next="TaikoDon2pStrongItem" prev="TaikoKatsu1pStrongItem"/>
+          <break-item/>
+          <select-item label="　　　面（大）　"    group="Setting"  id="TaikoDon1pStrongItem" loop="False" max="100"  min="2" default="25" lower-limit="TaikoDon1pStrongLimitItem" param-offset-x="18" next="TaikoKatsu1pWeakItem" prev="TaikoDon1pWeakItem"/>
+          <select-item label="　　　　　　　　　　　　　面（大）　"    group="Setting"  id="TaikoDon2pStrongItem" loop="False" max="100"  min="2" default="25" lower-limit="TaikoDon2pStrongLimitItem" param-offset-x="45" next="TaikoKatsu2pWeakItem" prev="TaikoDon2pWeakItem"/>
+          <break-item/>
+          <select-item label="　　　ふち　　　"    group="Setting"  id="TaikoKatsu1pWeakItem" loop="False" max="99"  min="1" default="5" upper-limit="TaikoKatsu1pWeakLimitItem" param-offset-x="18" next="TaikoKatsu1pStrongItem" prev="TaikoDon1pStrongItem" />
+          <select-item label="　　　　　　　　　　　　　ふち　　　"    group="Setting"  id="TaikoKatsu2pWeakItem" loop="False" max="99"  min="1" default="5" upper-limit="TaikoKatsu2pWeakLimitItem" param-offset-x="45" next="TaikoKatsu2pStrongItem" prev="TaikoDon2pStrongItem" />
+          <break-item/>
+          <select-item label="　　　ふち（大）"    group="Setting"  id="TaikoKatsu1pStrongItem" loop="False" max="100"  min="2" default="25" lower-limit="TaikoKatsu1pStrongLimitItem" param-offset-x="18" next="TaikoDon2pWeakItem" prev="TaikoKatsu1pWeakItem" />
+          <select-item label="　　　　　　　　　　　　　ふち（大）"    group="Setting"  id="TaikoKatsu2pStrongItem" loop="False" max="100"  min="2" default="25" lower-limit="TaikoKatsu2pStrongLimitItem" param-offset-x="45" prev="TaikoKatsu2pWeakItem" />
+          <break-item/>
+          <menu-item label="　ＥＸＩＴ" menu="IoTestMenu"/> <break-item/>
+          
+        </layout>
+        <layout type="Footer">
+            <break-item/><break-item/><break-item/><break-item/><break-item/>
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ ランプテスト
+    -->
+    <menu id="LampTestMenu" msg="MsgLampTest">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　ＬＡＭＰ ＴＥＳＴ"/> <break-item/>
+            <break-item/>
+            <text-item label="@Color/Red;　 ＯＮ：ＲＥＤ@Color/Default;"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+			<toggle-item label="ＷＨＩＴＥ ＬＥＤ" id="ItemLampTestWhite" replace-text="0:@Color/White;ＯＦＦ@Color/Default;,1:@Color/Red;ＯＮ@Color/Default;"/> <break-item/>
+			<text-item label="ＣＯＬＯＲ ＬＥＤ"/> <break-item/>
+			<toggle-item label="　　　　　 ＲＥＤ" id="ItemLampTestRed" replace-text="0:@Color/White;ＯＦＦ@Color/Default;,1:@Color/Red;ＯＮ@Color/Default;"/> <break-item/>
+			<toggle-item label="　　　　　 ＧＲＥＥＮ" id="ItemLampTestGreen" replace-text="0:@Color/White;ＯＦＦ@Color/Default;,1:@Color/Red;ＯＮ@Color/Default;"/> <break-item/>
+			<toggle-item label="　　　　　 ＢＬＵＥ" id="ItemLampTestBlue" replace-text="0:@Color/White;ＯＦＦ@Color/Default;,1:@Color/Red;ＯＮ@Color/Default;"/> <break-item/>
+            <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="IoTestMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ リンクテスト
+    -->
+    <menu id="LinkTestMenu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　ＬＩＮＫ ＴＥＳＴ"/> <break-item/>
+            <break-item/>
+            <text-item label="@Color/Red;　 ＯＮ：ＲＥＤ@Color/Default;"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="IoTestMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+	
+    <!--
+        ■ コードリーダーテスト
+    -->
+    <menu id="CodeReaderTestMenu" msg="MsgCodeReaderTest">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　ＣＯＤＥＲＥＡＤＥＲ ＴＥＳＴ"/> <break-item/>
+            <break-item/>
+    <!--
+                <data-item data="HeaderTextData" param-offset-x="-15"/> <break-item/>
+    -->
+        </layout>
+        <layout type="Center" padding-x="23">
+            <break-item/>
+            <break-item/>
+			<text-item id="ItemCodeReaderTest" param-offset-x="-20"/><break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+			<toggle-item label="ＣＯＤＥ ＲＥＡＤＥＲ ＬＡＭＰ ＴＥＳＴ" id="ItemCodeReaderLampTest" replace-text="0:@Color/White;ＯＦＦ@Color/Default;,1:@Color/Red;ＯＮ@Color/Default;"/> <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="IoTestMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>  
+
+    <!--
+        ■ モニターテスト
+    -->
+    <menu id="MonitorTestMenu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　ＭＯＮＩＴＯＲ ＴＥＳＴ"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <menu-item label="ＧＲＡＤＡＴＩＯＮ ＰＡＴＴＥＲＮ"   menu="GradationPatternMenu"/>       <break-item/>
+            <menu-item label="ＣＲＯＳＳＨＡＴＣＨ ＰＡＴＴＥＲＮ" menu="CrosshatchPatternMenu"/>      <break-item/>
+            <menu-item label="ＦＵＬＬ ＷＨＩＴＥ"                 menu="FullWhitePatternMenu"/>       <break-item/>
+            <menu-item label="ＳＣＲＯＬＬ ＰＡＴＴＥＲＮ"         menu="ScrollPatternMenu"/>          <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="TopMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <menu id="GradationPatternMenu" msg="MsgGradationPattern">
+        <layout>
+            <menu-item menu="MonitorTestMenu"/>
+        </layout>
+    </menu>
+
+    <menu id="CrosshatchPatternMenu" msg="MsgCrosshatchPattern">
+        <layout>
+            <menu-item menu="MonitorTestMenu"/>
+        </layout>
+    </menu>
+
+    <menu id="FullWhitePatternMenu" msg="MsgFullWhitePattern">
+        <layout>
+            <menu-item menu="MonitorTestMenu"/>
+        </layout>
+    </menu>
+
+    <menu id="ScrollPatternMenu" msg="MsgScrollPattern">
+        <layout>
+            <menu-item menu="MonitorTestMenu"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ サウンドテスト
+    -->
+    <menu id="SoundTestMenu" msg="MsgSoundTest" param-change-type="Select" msg-cmd="Sw/Service:SoundRequest">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　ＳＯＵＮＤ ＴＥＳＴ"/> <break-item/>
+            <break-item/>
+            <text-item label="@Color/Lime;　　　ＤＥＦＡＵＬＴ ＩＮ ＧＲＥＥＮ@Color/Default;"/>
+            <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <select-item label="ＶＯＬＵＭＥ　ＧＡＭＥ ＢＧＭ"    param-offset-x="35" group="Setting"  id="VolumeGameBGMItem"      loop="False" max="15"  min="0" default="10"/>            <break-item/>
+            <select-item label="　　　　ＧＡＭＥ ＳＥ"       param-offset-x="35" group="Setting"  id="VolumeGameSEItem"      loop="False" max="15"  min="0" default="10"/>            <break-item/>
+            <select-item label="　　　　ＡＴＴＲＡＣＴ ＢＧＭ"   param-offset-x="35" group="Setting"  id="VolumeAttractBGMItem"   loop="False" max="15"  min="0" default="10" />            <break-item/>
+            <select-item label="　　　　ＡＴＴＲＡＣＴ ＳＥ"     param-offset-x="35" group="Setting"  id="VolumeAttractSEItem"   loop="False" max="15"  min="0" default="10" />            <break-item/>
+            <select-item label="ＯＵＴＰＵＴ ＬＥＶＥＬ ＳＰＥＡＫＥＲ" param-offset-x="35" group="Setting"  format="%3d％" id="OutputLevelSpeakerItem" loop="False" max="100" min="0" default="80" delta="10"/> <break-item/>
+            <select-item label="　　　　　　ＷＯＯＦＥＲ" param-offset-x="35" group="Setting"  format="%3d％" id="OutputLevelWooferItem" loop="False" max="100" min="0" default="100" delta="10"/> <break-item/>
+            <break-item/>
+            <digit-item  label="ＲＥＱＵＥＳＴ ＮＯ．" param-offset-x="35" id="RequestNoItem" digit-num="1" max="2" min="0" default="0"  param-change-type="Select"/>
+            <select-item replace-text="0:, 1:　　※"  id="RequestNo2Item"              max="1"   min="0" default="1" select-skip="True"/>
+            <break-item/>
+            <cmd-item    label="ＬＲ ＣＨＥＣＫ" param-offset-x="35" id="CmdSoundLRCheck"/> <break-item/>
+            <select-item label="ＭＥＳＳＡＧＥ" param-offset-x="35" replace-text="0:, 1:ＬＥＦＴ, 2:ＲＩＧＨＴ, 3:ＬＥＦＴ＋ＲＩＧＨＴ, 4:ＷＯＯＦＥＲ" id="SoundTestMessageItem" max="4" min="0" default="0" select-skip="True"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="TopMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <text-item label="面とふちを叩くと、太鼓を叩いた時の音が鳴ります。" param-offset-x="25" /><break-item/>
+            <data-item data="FooterTextData" param-offset-x="-24"/> <break-item/>
+            <text-item label="ＳＥＲＶＩＣＥ ＳＷ：ＲＥＱＵＥＳＴ ＯＮ／ＯＦＦ" param-offset-x="25" />
+        </layout>
+    </menu>
+
+    <!--
+        ■ ネットワークテスト
+    -->
+    <menu id="NetworkMenu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　　ＮＥＴＷＯＲＫ ＯＰＴＩＯＮＳ"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <menu-item label="ＮＥＴＷＯＲＫ ＳＴＡＴＵＳ"           menu="NetworkStatusMenu"/>     <break-item/>
+            <menu-item label="ＬＯＣＡＬ ＮＥＴＷＯＲＫ ＣＨＥＣＫ" menu="LocalNetworkCheckMenu"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="TopMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ ネットワークステータス
+    -->
+    <menu id="NetworkStatusMenu" msg="MsgNetworkStatus">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　ＮＥＴＷＯＲＫ ＳＴＡＴＵＳ"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <text-item label="ＡＬＬ.Ｎｅｔ ＰＣＢ ＩＤ"     param-offset-x="30" id="AllNetPcbIdItem"/>   <break-item/>
+            <text-item label="ＡＬＬ.Ｎｅｔ ＧＡＭＥ ＶＥＲ" param-offset-x="30" id="AllNetGameVerItem"/> <break-item/>
+            <text-item label="ＡＬＬ.Ｎｅｔ ＬＩＣＥＮＳＥ"   param-offset-x="30" id="AllNetLicenseItem"/> <break-item/>
+            <text-item label="ＧＡＭＥ ＳＥＲＶＥＲ"          param-offset-x="30" id="GameServerItem"/>    <break-item/>
+            <text-item label="ＵＰＤＡＴＥ ＳＥＲＶＥＲ"      param-offset-x="30" id="UpdateServerItem"/>  <break-item/>
+            <ipv4-item label="ＩＰ ＡＤＤＲＥＳＳ"            param-offset-x="30" id="IpAddressItem"/>     <break-item/>
+            <ipv4-item label="ＳＵＢＮＥＴＭＡＳＫ"            param-offset-x="30" id="SubnetmaskItem"/>    <break-item/>
+            <ipv4-item label="ＧＡＴＥＷＡＹ"                  param-offset-x="30" id="GatewayItem"/>       <break-item/>
+            <ipv4-item label="ＴＥＮＰＯ ＲＯＵＴＥＲ"        param-offset-x="30" id="TenpoRouterItem"/>   <break-item/>
+            <ipv4-item label="ＰＲＩＭＡＲＹ ＤＮＳ"          param-offset-x="30" id="PrimaryDnsItem"/>    <break-item/>
+            <break-item/>
+            <text-item label="ＡＬＬ．Ｎｅｔ ＳＨＯＰ ＮＡＭＥ"/> <break-item/>
+            <text-item param-offset-x="15" id="AllNetShopNameItem"/>                    <break-item/>
+			<break-item/>
+    <!--
+            <cmd-item label="ＲＥＴＲＹ ＮＥＴＷＯＲＫ ＣＯＮＮＥＣＴＩＯＮ" cmd-text=",@Anim/Blink;ＣＯＮＥＣＴＩＮＧ,@Color/Lime;ＣＯＭＰＬＥＴＥ！@Color/Default;" id="CmdRetryNetworkConnection" confirm="True" cmd-param="1"/>
+    -->
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="NetworkMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ ローカルネットワークチェック
+    -->
+    <menu id="LocalNetworkCheckMenu" msg="MsgLocalNetworkCheck" param-color="Color/White">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　　ＬＯＣＡＬ ＮＥＴＷＯＲＫ ＣＨＥＣＫ"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <cmd-item label="ＣＨＥＣＫ ＳＴＡＲＴ" cmd-text=" , , " id="CmdStartLNC" confirm="True" cmd-param="1"/>
+            <break-item/>
+            <break-item/>
+			<select-item label="ＣＡＢＬＥ" param-offset-x="30" id="ItemLNCCable" replace-text="0:@Color/Gray;ＵＮＫＮＯＷＮ@Color/Default;, 1:@Color/Lime;ＯＫ@Color/Default;, 2:@Anim/Blink;ＢＵＳＹ@Color/Default;, -1:@Color/Red;ＥＲＲＯＲ@Color/Default;" select-skip="True" /><break-item/>
+			<text-item label="@Color/Gray;ＣＯＮＴＥＮＴＳ ＲＯＵＴＥＲ" /><break-item/>
+			<select-item label="ＴＥＮＰＯ ＲＯＵＴＥＲ" param-offset-x="30" id="ItemLNCTenpoRouter" replace-text="0:@Color/Gray;ＵＮＫＮＯＷＮ@Color/Default;, 1:@Color/Lime;ＯＫ@Color/Default;, 2:@Anim/Blink;ＢＵＳＹ@Color/Default;, -1:@Color/Red;ＥＲＲＯＲ@Color/Default;" select-skip="True" /><break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="NetworkMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ ブックキーピング
+    -->
+    <menu id="BookkeepingMenu" param-color="Color/White" msg="MsgBookkeeping">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　ＢＯＯＫＫＥＥＰＩＮＧ"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <time-item   label="ＰＯＷＥＲ ＯＮ ＴＩＭＥ"                          param-offset-x="30" id="PowerOnTimeItem"/>   <break-item/>
+            <time-item   label="ＴＯＴＡＬ ＰＬＡＹ ＴＩＭＥ"                         param-offset-x="30" id="TotalPlayTimeItem"/> <break-item/>
+            <time-item   label="ＡＶＥ．ＰＬＡＹ ＴＩＭＥ"                           param-offset-x="30" id="AvePlayTimeItem"/>   <break-item/>
+            <select-item label="ＰＬＡＹ ＯＮ ＲＡＴＩＯ" param-offset-x="30" format="%.1f" suffix="％" id="PlayOnRatioItem"    select-skip="True"/> <break-item/>
+            <select-item label="ＰＬＡＹ ＣＯＵＮＴ"                              param-offset-x="30" id="PlayCountItem"      select-skip="True"/> <break-item/>
+            <select-item label="ＣＯＩＮ ＣＯＵＮＴ"                              param-offset-x="30" id="CoinCountItem"      select-skip="True"/> <break-item/>
+            <select-item label="ＳＥＲＶＩＣＥ ＳＷ ＣＯＵＮＴ"                      param-offset-x="30" id="ServiceSwCountItem" select-skip="True"/> <break-item/>
+            <select-item label="ＦＲＥＥ ＰＬＡＹ ＣＯＵＮＴ"                      param-offset-x="30" id="FreePlayCountItem" select-skip="True"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＥＲＲＯＲ ＬＯＧ" id="ErrorLogItem" menu="ErrorLogMenu"/>     <break-item/>
+            <cmd-item  label="ＢＯＯＫＫＥＥＰＩＮＧ ＩＮＩＴＩＡＬＩＺＥ" cmd-text=",@Anim/Blink;ＩＮＩＴＩＡＬＩＺＩＮＧ,@Color/Lime;ＣＯＭＰＬＥＴＥ！@Color/Default;" id="CmdBookkeepingInitialize" confirm="True" cmd-param="1"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="TopMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ エラーログ
+    -->
+    <menu id="ErrorLogMenu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　ＥＲＲＯＲ ＬＯＧ １／２"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="3">
+                 <text-item prefix=" 1: " id="ItemErrorLog01" param-offset-x="3" /> <text-item id="ItemErrorLogTime01" param-offset-x="35"/> <break-item/>
+                 <text-item prefix=" 2: " id="ItemErrorLog02" param-offset-x="3" /> <text-item id="ItemErrorLogTime02" param-offset-x="35"/> <break-item/>
+                 <text-item prefix=" 3: " id="ItemErrorLog03" param-offset-x="3" /> <text-item id="ItemErrorLogTime03" param-offset-x="35"/> <break-item/>
+                 <text-item prefix=" 4: " id="ItemErrorLog04" param-offset-x="3" /> <text-item id="ItemErrorLogTime04" param-offset-x="35"/> <break-item/>
+                 <text-item prefix=" 5: " id="ItemErrorLog05" param-offset-x="3" /> <text-item id="ItemErrorLogTime05" param-offset-x="35"/> <break-item/>
+                 <text-item prefix=" 6: " id="ItemErrorLog06" param-offset-x="3" /> <text-item id="ItemErrorLogTime06" param-offset-x="35"/> <break-item/>
+                 <text-item prefix=" 7: " id="ItemErrorLog07" param-offset-x="3" /> <text-item id="ItemErrorLogTime07" param-offset-x="35"/> <break-item/>
+                 <text-item prefix=" 8: " id="ItemErrorLog08" param-offset-x="3" /> <text-item id="ItemErrorLogTime08" param-offset-x="35"/> <break-item/>
+                 <text-item prefix=" 9: " id="ItemErrorLog09" param-offset-x="3" /> <text-item id="ItemErrorLogTime09" param-offset-x="35"/> <break-item/>
+                 <text-item prefix="10: " id="ItemErrorLog10" param-offset-x="3" /> <text-item id="ItemErrorLogTime10" param-offset-x="35"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＮＥＸＴ" menu="ErrorLog2Menu"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="BookkeepingMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <menu id="ErrorLog2Menu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　ＥＲＲＯＲ ＬＯＧ ２／２"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="3">
+                 <text-item prefix="11: " id="ItemErrorLog11" param-offset-x="3" /> <text-item id="ItemErrorLogTime11" param-offset-x="35"/> <break-item/>
+                 <text-item prefix="12: " id="ItemErrorLog12" param-offset-x="3" /> <text-item id="ItemErrorLogTime12" param-offset-x="35"/> <break-item/>
+                 <text-item prefix="13: " id="ItemErrorLog13" param-offset-x="3" /> <text-item id="ItemErrorLogTime13" param-offset-x="35"/> <break-item/>
+                 <text-item prefix="14: " id="ItemErrorLog14" param-offset-x="3" /> <text-item id="ItemErrorLogTime14" param-offset-x="35"/> <break-item/>
+                 <text-item prefix="15: " id="ItemErrorLog15" param-offset-x="3" /> <text-item id="ItemErrorLogTime15" param-offset-x="35"/> <break-item/>
+                 <text-item prefix="16: " id="ItemErrorLog16" param-offset-x="3" /> <text-item id="ItemErrorLogTime16" param-offset-x="35"/> <break-item/>
+                 <text-item prefix="17: " id="ItemErrorLog17" param-offset-x="3" /> <text-item id="ItemErrorLogTime17" param-offset-x="35"/> <break-item/>
+                 <text-item prefix="18: " id="ItemErrorLog18" param-offset-x="3" /> <text-item id="ItemErrorLogTime18" param-offset-x="35"/> <break-item/>
+                 <text-item prefix="19: " id="ItemErrorLog19" param-offset-x="3" /> <text-item id="ItemErrorLogTime19" param-offset-x="35"/> <break-item/>
+                 <text-item prefix="20: " id="ItemErrorLog20" param-offset-x="3" /> <text-item id="ItemErrorLogTime20" param-offset-x="35"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＮＥＸＴ" menu="ErrorLogMenu"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="BookkeepingMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ ライセンス
+    -->
+    <menu id="LicenseMenu">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="ＬＩＣＥＮＳＥ"/> <break-item/>
+            <break-item/>
+            <data-item data="HeaderTextData" param-offset-x="-15"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <menu-item label="ＥＸＩＴ" menu="TopMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ その他
+    -->
+    <menu id="OthersMenu" msg="MsgOthers" >
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　ＯＴＨＥＲＳ"/> <break-item/>
+            <break-item/>
+            <data-item data="HeaderTextData" param-offset-x="-15"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <text-item label="店舗名" id="OthersShopNameItem" param-offset-x="15"/>     <break-item/>
+            <text-item label="ＤＡＴＡ１" id="Data1Item" param-offset-x="15"/>     <break-item/>
+            <date-item label="ＣＬＯＣＫ" id="ClockItem" param-offset-x="15"/>     <break-item/>
+            <text-item label="Ｓ／Ｎ" id="SNItem" param-offset-x="15" />            <break-item/>
+            <break-item/>
+            <select-item label="ＡＴＴＲＡＣＴ ＭＯＶＩＥ" param-offset-x="35" replace-text="0:ＯＮ, 1:ＯＦＦ" group="Setting" id="AttractMovieItem" max="1" min="0" default="0"/> <break-item/>
+            <select-item label="ＬＡＮＧＵＡＧＥ" param-offset-x="35" replace-text="0:ＪＰＮ, 1:ＥＮＧ, 2:ＣＨＮ, 3:ＫＯＲ" group="Setting" id="LanguageItem" max="0" min="0" default="0"/> <break-item/>
+            <cmd-item  label="ＢＡＣＫＵＰ ＭＥＭＯＲＹ ＩＮＩＴＩＡＬＩＺＥ"
+                cmd-text=",@Anim/Blink;ＩＮＩＴＩＡＬＩＺＩＮＧ,@Color/Lime;ＣＯＭＰＬＥＴＥ！@Color/Default;"
+                id="CmdBackupInitialize" confirm="True" cmd-param="1"/> <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="TopMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ ソフトウェアアップデート
+    -->
+    <menu id="SoftwareUpdateMenu" msg="MsgSoftwareUpdate" param-color="Color/White">
+        <layout type="Header">
+            <break-item/>
+            <text-item label="　　ＳＯＦＴＷＡＲＥ ＵＰＤＡＴＥ"/> <break-item/>
+        </layout>
+        <layout type="Center" padding-x="23">
+            <select-item label="認証"    id="MuchaAuthItem" replace-text="0:@Color/Red;ＮＧ, 1:正常" select-skip="True"/> <break-item/>
+            <select-item label="起動Ｖｅｒ．"    id="StartingVerItem" select-skip="True"/> <break-item/>
+            <select-item label="適用Ｖｅｒ．"    id="ApplyingVerItem" select-skip="True"/> <break-item/>
+            <select-item label="ＤＬ．Ｖｅｒ．"    id="DownLoadingVerItem" select-skip="True"/> <break-item/>
+            <select-item label="ＤＬ進捗（％）"    id="DLProgressItem" select-skip="True"/> <break-item/>
+            <select-item label="状況"    id="DLStatusItem"
+					replace-text="0:＊オンライン配信なし,
+								  1:＊オンライン配信中,
+								  2:＊ダウンロード完了,
+								  3:可能, 4:不可, 5:不要, 6:更新中"
+					 select-skip="True"/> <break-item/>
+            <break-item/>
+    <!--
+            <select-item label=""    id="DLMessageItem" param-offset-x="-10" select-skip="True"/> <break-item/>
+    -->
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <menu-item label="ＥＸＩＴ" menu="TopMenu"/> <break-item/>
+        </layout>
+        <layout type="Footer">
+            <data-item data="FooterTextData" param-offset-x="-20"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ 全デバイス終了待機メッセージ
+    -->
+    <menu id="ShutdownMenu">
+        <layout type="Center" padding-x="23">
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <text-item label="@Anim/Blink;デバイスチェック中"/>
+        </layout>
+    </menu>
+
+    <!--
+        ■ テストスイッチがＯＮの状態でEXITを選択した場合のメッセージ
+    -->
+    <menu id="TestSwOffMenu">
+        <layout type="Center" padding-x="23">
+            <break-item/>
+            <break-item/>
+            <break-item/>
+            <text-item label="@Anim/Blink;テストスイッチをＯＦＦにしてください"/>
+        </layout>
+    </menu>
+
+    <text-data id="HeaderTextData" data="@Color/Lime;　　ＤＥＦＡＵＬＴ ＩＮ ＧＲＥＥＮ@Color/Default;"/>
+    <!-- <text-data id="FooterTextData" data="ＣＵＲＳＯＲ ↑↓：ＣＨＯＯＳＥ　ＥＮＴＥＲ ＫＥＹ：ＥＮＴＥＲ"/> -->
+    <text-data id="FooterTextData" data="ＳＥＬＥＣＴ ＳＷ：ＣＨＯＯＳＥ　ＥＮＴＥＲ ＳＷ：ＥＮＴＥＲ"/>
+
+</root>
