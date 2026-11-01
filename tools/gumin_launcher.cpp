@@ -569,7 +569,8 @@ struct App {
         fs::remove_all(appDir / "Backup" / "update" / "files", ec);
         // 3. 全体を確かめる（manifest.sig と、いまのファイルが合っているか）
         std::string reason;
-        if (!AppGuard::Verify(appDir, reason, true)) {
+        // （証明書は、更新とは別のもの。まだ入れていなくても、ファイルだけを確かめる）
+        if (!AppGuard::Verify(appDir, reason, true, false)) {
             SetUpdText("更新はしましたが、確認に失敗しました: " + reason);
             Log("update verify failed: " + reason);
             upd = Upd::Error;
@@ -583,7 +584,7 @@ struct App {
         SetUpdText("アップデートしました（版 " + updRelease + "）");
         Log("update done: release " + updRelease);
         upd = Upd::Done;
-        check = Check::Ok;
+        StartCheck();   // 証明書も含めて、もう一度確かめる
     }
 
     bool UpdateBusy() const { return upd == Upd::Checking || upd == Upd::Downloading || upd == Upd::Applying; }

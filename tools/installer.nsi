@@ -41,6 +41,10 @@ Section "GuminTaiko" SecMain
   SetOutPath "$INSTDIR"
   ; 前のインストールの読み取り専用を外してから上書きする
   nsExec::Exec 'attrib -R "$INSTDIR\*" /S /D'
+!ifdef STAGE
+  ; ウェブ版: ランチャーと、ランチャーの画面に要る最小限だけ入れる。残りは、ランチャーが初めて開いたとき、GitHub から取ってくる
+  File /r "${STAGE}\*.*"
+!else
   ; 中身の zip（インストーラーと同じフォルダ）を展開する
   IfFileExists "$EXEDIR\${PAYLOAD}" +3 0
     MessageBox MB_OK|MB_ICONSTOP "${PAYLOAD} が見つかりません。\n${PAYLOAD} を、このインストーラーと同じフォルダに置いてください。"
@@ -51,6 +55,7 @@ Section "GuminTaiko" SecMain
   StrCmp $0 "0" +3 0
     MessageBox MB_OK|MB_ICONSTOP "展開に失敗しました（終了コード $0）。ディスクの空き容量（約 3GB）と、${PAYLOAD} が壊れていないかを確かめてください。"
     Abort
+!endif
   ; 足す場所（曲・プレイヤーデータ・音の変換結果）。中身は自由に変えてよい
   CreateDirectory "$INSTDIR\Songs\創作譜面"
   CreateDirectory "$INSTDIR\Backup"

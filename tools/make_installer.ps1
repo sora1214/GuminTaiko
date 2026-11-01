@@ -8,7 +8,8 @@
 param(
     [string]$AppDir = "C:\GuminTaiko",
     [string]$Version = (Get-Date -Format "yyyy.MM.dd"),
-    [string]$Out = "dist"
+    [string]$Out = "dist",
+    [switch]$Web   # ウェブ版: ランチャーだけ入れて、残りはランチャーが GitHub から取ってくる（小さい。zip は要らない）
 )
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
@@ -16,6 +17,32 @@ Set-Location $Root
 
 function Step($text) { Write-Host "== $text" -ForegroundColor Cyan }
 
+if ($Web) {
+    # ---- ウェブ版: ランチャー・更新元・ランチャーの画面に要る素材（フォントと背景）だけ ----
+    foreach ($need in @("GuminLauncher.exe", "update_url.txt")) {
+        if (-not (Test-Path (Join-Path $AppDir $need))) { throw "$AppDir に $need がありません。先に tools\package.ps1 を実行してください" }
+    }
+    $makensis = (Get-Command makensis -ErrorAction SilentlyContinue).Source
+    if (-not $makensis) { throw "makensis（NSIS）が見つかりません" }
+    $stage = Join-Path $Root "build-installer\stage-web"
+    if (Test-Path $stage) { & attrib -R "$stage\*" /S /D | Out-Null; Remove-Item $stage -Recurse -Force }
+    New-Item -ItemType Directory -Force $stage | Out-Null
+    Copy-Item (Join-Path $AppDir "GuminLauncher.exe") $stage
+    Copy-Item (Join-Path $AppDir "update_url.txt") $stage
+    foreach ($d in @("font", "launcher")) {
+        & robocopy (Join-Path $AppDir "Data\x64\$d") (Join-Path $stage "Data\x64\$d") /E /NFL /NDL /NJH /NJS /NP | Out-Null
+        if ($LASTEXITCODE -ge 8) { throw "Data\x64\$d のコピーに失敗しました" }
+    }
+    & attrib -R "$stage\*" /S /D | Out-Null
+    New-Item -ItemType Directory -Force $Out | Out-Null
+    $outFile = Join-Path (Resolve-Path $Out).Path "GuminTaiko-WebSetup-$Version.exe"
+    Step "ウェブ版のインストーラーを作ります: $outFile"
+    & $makensis /V2 "/DSTAGE=$stage" "/DOUTFILE=$outFile" "/DVERSION=$Version" (Join-Path $Root "tools\installer.nsi")
+    if ($LASTEXITCODE -ne 0) { throw "インストーラーを作れませんでした" }
+    Step "できました: $outFile ($([math]::Round((Get-Item $outFile).Length / 1MB, 0)) MB)"
+    Write-Host "  遊ぶ人は、これを実行 → ランチャーが GitHub から残りを取ってくる（約 2.4GB）→ ID を送って証明書をもらい「証明書を入れる」"
+    return
+}
 foreach ($need in @("GuminTaiko.exe", "GuminLauncher.exe", "GuminDressUp.exe", "GuminDaniEditor.exe", "manifest.sig")) {
     if (-not (Test-Path (Join-Path $AppDir $need))) { throw "$AppDir に $need がありません。先に tools\package.ps1 を実行してください" }
 }

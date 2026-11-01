@@ -319,17 +319,18 @@ bool IsMachineId(const std::string& id) {
     return true;
 }
 
-bool Verify(const fs::path& dir, std::string& problem, bool checkFiles) {
+bool Verify(const fs::path& dir, std::string& problem, bool checkFiles, bool checkLicense) {
 #ifdef GUMIN_PROTECT
     problem.clear();
     g_problemSink = &problem;
-    bool ok = CheckLicense(dir);
+    bool ok = !checkLicense || CheckLicense(dir);
     if (ok && checkFiles) ok = CheckManifest(dir);
     g_problemSink = nullptr;
     return ok;
 #else
     (void)dir;
     (void)checkFiles;
+    (void)checkLicense;
     problem.clear();
     return true;   // 保護なしのビルド（開発用）は確かめない
 #endif

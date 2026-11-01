@@ -22,7 +22,7 @@ bool CheckAtStartup();
 
 // 画面を出さずに確かめる（ランチャー用）。証明書（license.cert）と、checkFiles なら改変の検知（manifest.sig）も。
 // 問題があれば理由を problem に入れて false。保護なしのビルドでは常に true
-bool Verify(const std::filesystem::path& dir, std::string& problem, bool checkFiles);
+bool Verify(const std::filesystem::path& dir, std::string& problem, bool checkFiles, bool checkLicense = true);
 // 署名つきのテキスト（「signature=」の行つき）を確かめて、本文を body に入れる（アップデートの目録に使う）。
 // 保護なしのビルドでは署名を確かめない（開発用）
 bool VerifySignedText(const std::string& text, std::string& body);
