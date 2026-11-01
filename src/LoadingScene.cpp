@@ -20,6 +20,8 @@ constexpr const char* kFadeMovie = "lumen/000_default/loading/loading_kuro_resul
 // 段位道場の1曲目の前（2曲目からは演奏画面の幕 dani_enso_between）。in で前の画面が暗くなり（stop で暗転しきる）、
 // 絵が出て out までゆっくり動き、end で演奏画面に切り替わる（幕はないので、そのまま切り替える）
 constexpr const char* kDaniMovie = "lumen/000_default/enso_dani/loading_dani/loading_dani_song";
+// 幕が閉じきる（前の画面が見えなくなる）フレーム。ここからヒントを出す
+constexpr int kTipsFrame = 37;
 constexpr float kMinShowSeconds = 2.5f;   // 幕が開き始めるまでの最短の時間
 constexpr float kPreRunSeconds = 0.6f;    // 曲選択の出てくる演出（27 フレーム）を幕の裏で進める時間
 // 暗転（loading_kuro_result）を流す速さ。データのままだと暗くなるまで 110 フレーム（約 1.8 秒）、明けるまで 20 フレームかかるので速める
@@ -88,7 +90,7 @@ void LoadingScene::Initialize() {
             if (Lumen::MovieClip* c = stage_.GetMovieClip(name)) c->SetVisible(false);
         }
     }
-    // ヒント（深さ 11・12）は、前後の画面が少しでも見えているあいだは出さない。幕が閉じきってから、開き始めるまでだけ出す
+    // ヒント（深さ 11・12）は、前後の画面が少しでも見えているあいだは出さない。幕が閉じきってから（kTipsFrame）、開き始めるまでだけ出す
     //   （Update で切り替える）
     if (!fade_) SetTipsVisible(false);
     text("tips_title_mc", "tips_title_text", "hint");
@@ -151,7 +153,8 @@ void LoadingScene::Update(float deltaTime) {
         }
     }
 
-    if (!fade_) SetTipsVisible(closed_ && !out_);
+    // ヒントは、幕が閉じて前の画面が見えなくなったら（幕の絵の 37 フレーム目ごろ）すぐに出す。止まる（stop = 55）のを待たない
+    if (!fade_) SetTipsVisible(!out_ && root->CurrentFrame() >= kTipsFrame);
 
     // 曲選択は画面が出てくる演出（start_song_select）から始まるので、幕の裏で済ませておく。
     // 演奏ゲームは進めると曲の前の待ち時間が減ってしまうので、止めたままにする
