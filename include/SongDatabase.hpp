@@ -27,6 +27,7 @@ constexpr int kGenreCount = kGenreCustom + 1;
 // 「むずかしさをえらぶ」フォルダ。中に ★1〜★10 のフォルダが並び、その★の譜面（かんたん〜おに裏のどれか）がある曲が入る。
 // ジャンルの番号は、ふつうのジャンルとは別（root は kGenreLevelRoot、★N のフォルダは kGenreLevelBase + N）
 // 「お気に入り」と「最近遊んだ曲」のフォルダ。曲はプレイヤーごとの記録（PlayRecords）から並べる。ジャンルの番号は通常のジャンルとは別
+constexpr int kGenreDani = 94;   // 段位道場のフォルダ（選ぶと段位選択へ行く）
 constexpr int kGenreRecent = 95;
 constexpr int kGenreFavorite = 96;
 constexpr int kGenreLevelRoot = 99;

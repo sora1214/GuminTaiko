@@ -13,6 +13,7 @@
 #include "PlaceholderScene.hpp"
 #include "PlayData.hpp"
 #include "PlayRecord.hpp"
+#include "DaniSelectScene.hpp"
 #include "SceneManager.hpp"
 #include "SoundManager.hpp"
 #include "TaikoInput.hpp"
@@ -726,7 +727,8 @@ void SongSelectScene::StepSongMain() {
         }
         // 時間切れ: ジャンルなら開き、曲なら決める。「もどる」は飛ばす
         if (timeUp_ && don < 0 && ka == 0) {
-            if (panel.type == Panel::Type::Back) ka = 1;
+            // 段位道場のフォルダは、時間切れでは開かない（段位選択へ勝手に行かないように）
+            if (panel.type == Panel::Type::Back || (panel.type == Panel::Type::Genre && panel.genre->genreNo == kGenreDani)) ka = 1;
             else don = joined_[0] ? 0 : 1;
         }
 
@@ -903,6 +905,15 @@ int SongSelectScene::SkipTriggered() {
 void SongSelectScene::SelectGenre() {
     PlaySe("don", decidePlayer_);
     SoundManager::Get().StopSlot(kSlotVoice);
+
+    // 段位道場のフォルダは、開かずに、段位道場の段位選択へ行く（暗転してから）
+    if (Current().genre->genreNo == kGenreDani) {
+        PlayDataManager::Get().SetDecidedMode(GameMode::Dani);
+        SoundManager::Get().StopAll();
+        SceneManager::GetInstance().ChangeScene(
+            std::make_unique<LoadingScene>([] { return std::unique_ptr<Scene>(std::make_unique<DaniSelectScene>()); }), true);
+        return;
+    }
 
     const int genreIndex = current_;
     // ★N のフォルダは、「むずかしさをえらぶ」を開いたまま、その中で開く（閉じたらそこに戻る）

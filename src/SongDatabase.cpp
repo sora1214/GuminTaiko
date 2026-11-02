@@ -27,8 +27,9 @@ constexpr const char* kTableDir = "Data/x64/datatable/";
 // ニジイロの「ゲーム＆バラエティ」（game・紫）はゲームミュージックとして使い、バラエティは分ける。
 // バラエティは本家のデータに特集フォルダとして入っている event3（緑、文言「バラエティ」）の絵を使う。
 // クラシックはニジイロにないジャンルなので、同じく特集フォルダの event4（黄色）の絵を使う。
-// 創作譜面（自作の譜面のフォルダ）は、選曲画面では使っていない dani（紺色）の絵を使う
-constexpr const char* kGenreIds[kGenreCount] = {"pops", "anime", "kids", "vocaloid", "game", "namco", "event3", "event4", "dani"};
+// 創作譜面（自作の譜面のフォルダ）は、ほかのどのフォルダとも色がかぶらない event13（白地に赤）の絵を使う。
+// （紺色の dani の絵は、段位道場のフォルダに使う）
+constexpr const char* kGenreIds[kGenreCount] = {"pops", "anime", "kids", "vocaloid", "game", "namco", "event3", "event4", "event13"};
 constexpr const char* kTjaDir = "Songs";
 // Songs 直下のジャンルフォルダ（kGenreIds と同じ順。名前はゲーム内のジャンル名）
 constexpr const char* kGenreFolders[kGenreCount] = {"ポップス", "アニメ", "キッズ", "ボーカロイド曲", "ゲームミュージック", "ナムコオリジナル",
@@ -256,7 +257,7 @@ const char* SongDatabase::GenreIdFromNo(int genreNo) {
 
 const char* SongDatabase::GenreTextKey(int genreNo) {
     static const char* const kKeys[kGenreCount] = {"genre_pops", "genre_anime", "genre_kids", "genre_vocalo",
-                                                   "genre_game", "genre_namco", "genre_event3", "genre_event4", "genre_dani"};
+                                                   "genre_game", "genre_namco", "genre_event3", "genre_event4", "genre_event13"};
     return genreNo >= 0 && genreNo < kGenreCount ? kKeys[genreNo] : "genre_pops";
 }
 
@@ -268,7 +269,7 @@ const char* SongDatabase::GenrePlateLabel(int genreNo) {
 std::array<float, 3> SongDatabase::GenrePlateTint(int genreNo) {
     if (genreNo == kGenreVariety) return {0.45f, 0.95f, 0.45f};   // 緑
     if (genreNo == kGenreClassic) return {1.0f, 0.85f, 0.2f};     // 黄色（選曲の看板 event4 の色）
-    if (genreNo == kGenreCustom) return {0.45f, 0.55f, 0.95f};    // 紺色（選曲の看板 dani の色）
+    if (genreNo == kGenreCustom) return {1.0f, 0.68f, 0.72f};     // 薄い赤（選曲の看板 event13 の色）
     return {1.0f, 1.0f, 1.0f};
 }
 
@@ -375,6 +376,8 @@ void SongDatabase::Load() {
         // お気に入りと最近遊んだ曲は、プレイヤーの記録から並べる専用のフォルダ
         if (genre.id == "favorite") genre.genreNo = kGenreFavorite;
         if (genre.id == "recent") genre.genreNo = kGenreRecent;
+        // 段位道場: 選ぶと、段位道場の段位選択へ行く（曲は入っていない）。看板は本家の dani（紺色）
+        if (genre.id == "dani") genre.genreNo = kGenreDani;
         // イベントなどのフォルダは中身を組み立てられないので出さない。曲の入っていないジャンルも出す
         // バラエティ・クラシックの特集フォルダ（event3 / event4）は下で自分で足す
         if (genre.genreNo < 0 || genre.genreNo == kGenreVariety || genre.genreNo == kGenreClassic || genre.genreNo == kGenreCustom) continue;
@@ -423,8 +426,11 @@ void SongDatabase::Load() {
     WordList::Get().Set("genre_event3", kVarietyTitle);
     WordList::Get().Set("folder_event4", kClassicTitle);
     WordList::Get().Set("genre_event4", kClassicTitle);
-    WordList::Get().Set("folder_dani", kCustomTitle);
-    WordList::Get().Set("genre_dani", kCustomTitle);
+    // 創作譜面（event13 の絵）。段位道場（dani）は本家の名前のまま
+    WordList::Get().Set("folder_event13", kCustomTitle);
+    WordList::Get().Set("genre_event13", kCustomTitle);
+    WordList::Get().Set("folder_dani", "段位道場");
+    WordList::Get().Set("folder_intro_dani", "段位道場にちょうせんしよう！");
     // 「むずかしさをえらぶ」（ジャンルの一覧の、ポップスのあと）
     {
         GenreInfo root;
@@ -473,7 +479,7 @@ void SongDatabase::Load() {
     }
     // ジャンルの看板の説明は「<ジャンル名>の曲をあつめたよ!」（本家の看板。名前が「曲」で終わるものは「<名前>をあつめたよ!」）
     for (const GenreInfo& genre : genres_) {
-        if (genre.levelRoot) continue;   // 「むずかしさをえらぶ」は専用の説明文
+        if (genre.levelRoot || genre.genreNo == kGenreDani) continue;   // 「むずかしさをえらぶ」と段位道場は専用の説明文
         const std::string name = WordList::Get().Text("folder_" + genre.id);
         const std::string suffix = "曲";
         const bool endsWithSong = name.size() >= suffix.size() && name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0;
