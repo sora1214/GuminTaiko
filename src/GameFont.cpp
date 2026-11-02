@@ -216,6 +216,7 @@ void GameFont::LoadBitmapFonts() {
 
 GameFont::BitmapFont* GameFont::PickBitmap(float size) const {
     if (face_ == FontFace::Large && bitmapLarge_) return bitmapLarge_.get();
+    if (face_ == FontFace::Small && bitmapSmall_) return bitmapSmall_.get();
     if (face_ == FontFace::ExtraBold) {
         // 極太は使うときに読み込む
         if (!extraBoldTried_) {

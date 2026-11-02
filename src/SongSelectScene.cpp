@@ -212,6 +212,14 @@ void SongSelectScene::Initialize() {
     if (Lumen::MovieClip* number = stage_.GetMovieClip("song_of_number_instance")) {
         TextPath(number, "main/number_of_songs", "text_total_songs", "attract_numberofstage");
         TextPath(number, "main/number_of_songs", "text_current_songs", "attract_numberofsong");
+        // 「N 曲目」「N 曲」の字形は、演奏画面（song_info）と同じ、小さい文字用の字形にする（この画面は文字をすべて太い字形にしている）。色と縁取りは元のまま
+        if (Lumen::MovieClip* songs = Sub(number, "main/number_of_songs")) {
+            Lumen::MovieClip::TextStyle style;
+            style.face = FontFace::Small;
+            style.colors = false;
+            songs->SetTextStyle("text_current_songs", style);
+            songs->SetTextStyle("text_total_songs", style);
+        }
     }
     if (guide_) {
         if (Lumen::MovieClip* all = Sub(guide_, "main/taiko_small/all")) all->SetText("guide_text_instance", "text_guide", "decide");

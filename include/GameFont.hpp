@@ -9,7 +9,7 @@ enum class TextAlign { Left, Center, Right };
 
 // ゲーム内フォントの選び方。Auto: 大きさで選ぶ（40 以下は jp_32_B、それより大きいと jp_64）
 //   ExtraBold: jp_32_EB（極太）  Large: jp_64（選曲のジャンルの看板と同じ字形。小さく描いても使う）
-enum class FontFace { Auto, ExtraBold, Large };
+enum class FontFace { Auto, ExtraBold, Large, Small };   // Small: 画面の文字をすべて Large にしている画面で、小さい文字用の細い字形に戻す
 
 // 文字の描画
 // ゲーム内フォント（Data/x64/font/jp_*.nutexb + .xml）を優先して使い、
