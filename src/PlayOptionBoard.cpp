@@ -14,6 +14,13 @@ constexpr int kNeiroStartFrames = 12;      // 音色: 選んでから最初の�
 constexpr int kNeiroIntervalFrames = 30;   // 音色: ドンとカッを交互に鳴らす間隔（lua: 0.5 * Common.FPS）
 constexpr int kNeiroSlotBase = 4;          // 音色の試し打ちを鳴らすスロット（1P: 4、2P: 5）
 
+// ---- 文字の上下の位置（ピクセル。小さくすると上へ、大きくすると下へ。0 が元のデータの位置）----
+//   左右の位置は、元のデータの文字の枠の座標で決まっていて、ここでは変えられない
+constexpr float kTitleOffsetY = 0.0f;       // 「演奏オプション」（板の上の題）
+constexpr float kItemNameOffsetY = 0.0f;    // 項目の名前（はやさ・ドロン・あべこべ…）
+constexpr float kItemValueOffsetY = 0.0f;   // 項目の値（1.0・しない・なし・太鼓…）
+constexpr float kPositionTextOffsetY = 0.0f;   // 音符位置調整の窓の文字
+
 const char* const kItemNames[PlayOptionBoard::kItemCount] = {"option_speed", "option_doron", "option_abekobe", "option_random",
                                                               "option_skip", "option_position", "option_voice", "option_neiro"};
 const char* const kNeiroLabels[PlayOptions::kNeiroCount] = {
@@ -56,7 +63,16 @@ void PlayOptionBoard::Setup(Lumen::MovieClip* board, int player, bool right, boo
         s.arrowLeft = Sub(s.mc, "arrow_left");
         s.arrowRight = Sub(s.mc, "arrow_right");
         s.count = kCounts[i];
-        if (s.mc) s.mc->SetText("text_option_name", "text_option_name", kItemNames[i]);
+        if (s.mc) {
+            s.mc->SetText("text_option_name", "text_option_name", kItemNames[i]);
+            // 色と縁取りは元のまま、上下の位置だけ変える
+            Lumen::MovieClip::TextStyle name, value;
+            name.colors = value.colors = false;
+            name.offsetY = kItemNameOffsetY;
+            value.offsetY = kItemValueOffsetY;
+            s.mc->SetTextStyle("text_option_name", name);
+            s.mc->SetTextStyle("text_item_name", value);
+        }
     }
     const char* side = right ? "r" : "l";
     positionWindow_ = Sub(board_, std::string("board/onp_position_") + side + "_mc");
@@ -71,7 +87,13 @@ void PlayOptionBoard::Setup(Lumen::MovieClip* board, int player, bool right, boo
         Goto(Sub(board_, "board/player_icon_base"), "2p");
         Goto(Sub(board_, "board/player_icon"), twoPlayers_ ? "2p" : "1p");
     }
-    if (Lumen::MovieClip* inner = Sub(board_, "board")) inner->SetText("text_option_title", "text_option_title", "option_title");
+    if (Lumen::MovieClip* inner = Sub(board_, "board")) {
+        inner->SetText("text_option_title", "text_option_title", "option_title");
+        Lumen::MovieClip::TextStyle title;
+        title.colors = false;
+        title.offsetY = kTitleOffsetY;
+        inner->SetTextStyle("text_option_title", title);
+    }
     Reset();
 }
 
@@ -282,6 +304,12 @@ void PlayOptionBoard::SetPositionWindow(int position) {
     char key[32];
     std::snprintf(key, sizeof(key), "option_position_0%02d", 6 + position);
     positionSelect_->SetText("text_onp_position", "text_position", key);
+    {
+        Lumen::MovieClip::TextStyle style;
+        style.colors = false;
+        style.offsetY = kPositionTextOffsetY;
+        positionSelect_->SetTextStyle("text_onp_position", style);
+    }
 }
 
 // 面: 次の項目へ（lua: CursorMove）
