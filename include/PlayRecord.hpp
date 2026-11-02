@@ -72,6 +72,14 @@ public:
     // 挑戦の結果を残す（合格の段階が上がったか、同じで魂ゲージが上のときに成績を入れ替える）。昇段したら true
     bool AddDani(const std::string& owner, int level, const DaniRecord& result);
 
+    // 選曲画面の「お気に入り」と「最近遊んだ曲」（曲の記録 id の並び。本家ではカードのデータ）
+    static constexpr size_t kRecentMax = 30;
+    std::vector<std::string> Favorites(const std::string& owner);
+    std::vector<std::string> Recent(const std::string& owner);   // 新しい順
+    bool IsFavorite(const std::string& owner, const std::string& songId);
+    bool ToggleFavorite(const std::string& owner, const std::string& songId);   // 入れたら true、はずしたら false
+    void AddRecent(const std::string& owner, const std::string& songId);
+
     // 演奏オプション（本家のカードユーザーと同じく、次に遊ぶときも前に決めた設定から始める）
     PlayOptions Options(const std::string& owner);
     void SetOptions(const std::string& owner, const PlayOptions& options);
@@ -93,6 +101,8 @@ private:
         PlayOptions options;
         std::map<std::string, ChartRecord> charts;   // "曲ID/難易度"
         std::map<int, DaniRecord> dani;               // 段位（1〜19）
+        std::vector<std::string> favorites;           // お気に入りの曲（記録 id）
+        std::vector<std::string> recent;              // 最近遊んだ曲（記録 id。新しい順）
     };
 
     PlayRecords() = default;

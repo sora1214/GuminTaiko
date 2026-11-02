@@ -26,6 +26,9 @@ constexpr int kGenreCustom = 8;
 constexpr int kGenreCount = kGenreCustom + 1;
 // 「むずかしさをえらぶ」フォルダ。中に ★1〜★10 のフォルダが並び、その★の譜面（かんたん〜おに裏のどれか）がある曲が入る。
 // ジャンルの番号は、ふつうのジャンルとは別（root は kGenreLevelRoot、★N のフォルダは kGenreLevelBase + N）
+// 「お気に入り」と「最近遊んだ曲」のフォルダ。曲はプレイヤーごとの記録（PlayRecords）から並べる。ジャンルの番号は通常のジャンルとは別
+constexpr int kGenreRecent = 95;
+constexpr int kGenreFavorite = 96;
 constexpr int kGenreLevelRoot = 99;
 constexpr int kGenreLevelBase = 100;
 constexpr int kLevelFolderMax = 10;
@@ -78,6 +81,8 @@ public:
     // ジャンルに入っている曲（music_order の並び順）
     const std::vector<const SongInfo*>& SongsInGenre(int genreNo);
     const SongInfo* FindSong(int uniqueId);
+    // 記録の id（SongInfo::RecordId）の並びから曲を引く（お気に入り・最近遊んだ曲。なくなった曲は飛ばす。並びはそのまま）
+    std::vector<const SongInfo*> SongsByRecordIds(const std::vector<std::string>& ids);
     // fumen からの相対パス（"曲名.tja"）の TJA の曲（段位道場のお題が使う。Songs からの相対パスも探す）
     const SongInfo* FindSongByTja(const std::string& relative);
     static std::string TjaRelativePath(const SongInfo& song);

@@ -318,6 +318,7 @@ void SongSelectScene::Update(float deltaTime) {
         skipInput_[p].kaRight = skipInput_[p].kaRight || TaikoInput::IsKaRight(p);
     }
     back_ = back_ || TaikoInput::IsBackPressed();
+    favKey_ = favKey_ || TaikoInput::KeyPressed(KEY_TAB);
     donAnim_.Update(deltaTime);
     accumulator_ = std::min(accumulator_ + deltaTime, kFrame * 4.0f);
     bool first = true;
@@ -422,7 +423,7 @@ void SongSelectScene::OpenFolderPanels(int genreIndex) {
             ++count;
         }
     }
-    for (const SongInfo* song : SongDatabase::Get().SongsInGenre(folder.genre->genreNo)) {
+    for (const SongInfo* song : FolderSongs(*folder.genre)) {
         if (count % kSongsBetweenBack == 0) songs.push_back(back);
         Panel panel;
         panel.type = Panel::Type::Song;
@@ -443,8 +444,17 @@ std::string SongSelectScene::BoardLabel(const std::string& genreId) {
 
 int SongSelectScene::FolderItemCount(const GenreInfo& genre) const {
     if (genre.levelRoot) return int(SongDatabase::Get().LevelFolders().size());
-    return int(SongDatabase::Get().SongsInGenre(genre.genreNo).size());
+    return int(FolderSongs(genre).size());
 }
+
+// フォルダに入れる曲。お気に入りと最近遊んだ曲は、いま選曲しているプレイヤー（1P、いなければ 2P）の記録から
+std::vector<const GuminTaiko::SongInfo*> SongSelectScene::FolderSongs(const GenreInfo& genre) const {
+    if (genre.genreNo == kGenreFavorite) return SongDatabase::Get().SongsByRecordIds(PlayRecords::Get().Favorites(ListOwner()));
+    if (genre.genreNo == kGenreRecent) return SongDatabase::Get().SongsByRecordIds(PlayRecords::Get().Recent(ListOwner()));
+    return SongDatabase::Get().SongsInGenre(genre.genreNo);
+}
+
+std::string SongSelectScene::ListOwner() const { return PlayRecords::Owner(joined_[0] ? 0 : 1); }
 
 int SongSelectScene::Wrap(int index) const {
     const int count = PanelCount();
@@ -696,6 +706,12 @@ void SongSelectScene::StepSongMain() {
     if (voiceWait_ > 0 && --voiceWait_ == 0 && firstKatsu_ && panel.type == Panel::Type::Genre &&
         !panel.genre->voiceTone.empty()) {
         SoundManager::Get().PlaySlot(kBankVoice, panel.genre->voiceTone, kSlotVoice);
+    }
+
+    // TAB: 選んでいる曲を、お気に入りに入れる／はずす（本家はドンだーひろばで決めるが、ここではキーで決める）
+    if (favKey_) {
+        favKey_ = false;
+        if (inputEnable_ && panel.type == Panel::Type::Song) ToggleFavorite();
     }
 
     // ---- 入力（lua: ProcessSkipping / PlayerInput） ----
@@ -1004,8 +1020,43 @@ void SongSelectScene::StepCloseFolder() {
     SetState(State::SongMain);
 }
 
+// 右上の「N 曲目」の下に、お気に入りの案内（曲を選んでいるあいだ）と、入れた／はずした知らせを出す
+void SongSelectScene::DrawFavoriteHint() {
+    GameFont& font = GameFont::Get();
+    auto shadowed = [&](const std::string& text, float x, float y, float size, Color color, TextAlign align) {
+        font.Draw(text.c_str(), x + 2.0f, y + 2.0f, size, Color{0, 0, 0, 170}, align);
+        font.Draw(text.c_str(), x, y, size, color, align);
+    };
+    if (state_ == State::SongMain && Current().type == Panel::Type::Song && Current().song) {
+        const bool favorite = PlayRecords::Get().IsFavorite(ListOwner(), Current().song->RecordId());
+        shadowed(favorite ? "★ お気に入り   TAB: はずす" : "TAB: お気に入りに入れる", 1896.0f, 330.0f, 22.0f,
+                 favorite ? Color{255, 214, 90, 255} : Color{255, 255, 255, 235}, TextAlign::Right);
+    }
+    const float age = float(GetTime()) - favToastTime_;
+    if (age >= 0.0f && age < 2.5f) {
+        const float alpha = std::clamp(2.5f - age, 0.0f, 1.0f);
+        const Rectangle box{660.0f, 56.0f, 600.0f, 54.0f};
+        DrawRectangleRounded(box, 0.5f, 12, Color{14, 16, 26, (unsigned char)(210.0f * alpha)});
+        DrawRectangleRoundedLines(box, 0.5f, 12, 2.0f, Color{255, 214, 90, (unsigned char)(255.0f * alpha)});
+        font.Draw(favToast_.c_str(), box.x + box.width * 0.5f, box.y + 11.0f, 30.0f, Color{255, 255, 255, (unsigned char)(255.0f * alpha)}, TextAlign::Center);
+    }
+}
+
+void SongSelectScene::ToggleFavorite() {
+    const SongInfo* song = Current().song;
+    if (!song) return;
+    const bool added = PlayRecords::Get().ToggleFavorite(ListOwner(), song->RecordId());
+    SoundManager::Get().Play(kBankSeSenkyoku, "skip_songs", 0.6f);
+    favToast_ = added ? "お気に入りに入れました" : "お気に入りからはずしました";
+    favToastTime_ = float(GetTime());
+}
+
 // 曲を決める（lua: DecideSongPanelAnimation）
 void SongSelectScene::DecideSong() {
+    // 遊ぶ曲は「最近遊んだ曲」に入る（エントリーしているプレイヤーそれぞれの記録に）
+    for (int p = 0; p < 2; ++p) {
+        if (joined_[p] && Current().song) PlayRecords::Get().AddRecent(PlayRecords::Owner(p), Current().song->RecordId());
+    }
     PlaySe("don", decidePlayer_);
     // プレビューが流れ始める前に決めたときは、ここで流す（難易度選択のあいだも曲を流す）
     if (SoundManager::Get().PreviewBank() != Current().song->SoundBank()) PlayFocusSound();
@@ -1479,6 +1530,7 @@ void SongSelectScene::Draw() {
     }
     RenderDons();
     stage_.Draw();
+    DrawFavoriteHint();
     // オートのマーク: 演奏オプションのアイコンと同じ大きさで、並んでいるアイコンの次のところに出す
     //   （アイコンは 43px おき。1P は左から、2P は右から詰める。位置は、アイコンの部品の座標に画面の左上までのずれを足す）
     for (int p = 0; p < 2; ++p) {

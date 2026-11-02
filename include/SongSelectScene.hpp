@@ -145,6 +145,7 @@ private:
     void ResetSkipping();
     void ProcessSkipping();
     int SkipTriggered();           // とばす向き（とばさないなら 0）
+    bool favKey_ = false;          // TAB（お気に入りを入れる／はずす）を押した（次に進むフレームまで覚えておく）
     bool back_ = false;            // ESC（1つ前へ戻る）。難易度選択 → 曲の一覧 → ジャンルの一覧 → エントリー画面
     bool StepBack();               // ESC を処理した（状態が変わった）ら true
 
@@ -171,7 +172,13 @@ private:
     std::string parentGenre_;
     int parentIndex_ = -1;
     static std::string BoardLabel(const std::string& genreId);   // 看板・背景の絵のラベル（「むずかしさ」関係は recent の色）
-    int FolderItemCount(const GuminTaiko::GenreInfo& genre) const;   // フォルダの中の曲（「むずかしさをえらぶ」なら ★ のフォルダ）の数
+    int FolderItemCount(const GuminTaiko::GenreInfo& genre) const;
+    std::vector<const GuminTaiko::SongInfo*> FolderSongs(const GuminTaiko::GenreInfo& genre) const;   // フォルダの曲（お気に入り・最近遊んだ曲は記録から）
+    std::string ListOwner() const;                                                                     // お気に入り・最近遊んだ曲の持ち主（記録の owner）
+    void DrawFavoriteHint();
+    void ToggleFavorite();                                                                             // 選んでいる曲のお気に入りを入れる／はずす
+    std::string favToast_;                                                                             // 画面に出す知らせ
+    float favToastTime_ = -100.0f;   // フォルダの中の曲（「むずかしさをえらぶ」なら ★ のフォルダ）の数
     std::map<std::string, int> closeIndex_;   // フォルダを閉じたときの位置（lua: save_current_index）
     std::string bgGenre_;
     bool bgFront_ = true;          // 手前の背景（bg_instance_1）を見せているか

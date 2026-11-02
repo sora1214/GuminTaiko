@@ -124,6 +124,19 @@ void PlayRecords::Load() {
             owner->dispCourse = std::clamp(std::atoi(value.c_str()), 0, 4);
             continue;
         }
+        if (key == "favorites" || key == "recent") {
+            std::vector<std::string>& list = key == "favorites" ? owner->favorites : owner->recent;
+            list.clear();
+            size_t start = 0;
+            while (start <= value.size()) {
+                const size_t comma = value.find(',', start);
+                const std::string id = value.substr(start, comma == std::string::npos ? std::string::npos : comma - start);
+                if (!id.empty()) list.push_back(id);
+                if (comma == std::string::npos) break;
+                start = comma + 1;
+            }
+            continue;
+        }
         if (key == "option") {
             int v[8] = {0, 0, 0, 0, 0, 0, 1, 0};
             std::sscanf(value.c_str(), "%d,%d,%d,%d,%d,%d,%d,%d", &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7]);
@@ -158,6 +171,14 @@ void PlayRecords::SaveCoin() const {
     const PlayOptions& o = owner.options;
     ofs << "option=" << o.speed << ',' << int(o.doron) << ',' << int(o.abekobe) << ',' << o.random << ',' << int(o.ensoSkip)
         << ',' << o.notePosition << ',' << int(o.voice) << ',' << o.neiro << '\n';
+    auto writeList = [&](const char* name, const std::vector<std::string>& list) {
+        if (list.empty()) return;
+        ofs << name << '=';
+        for (size_t i = 0; i < list.size(); ++i) ofs << (i ? "," : "") << list[i];
+        ofs << '\n';
+    };
+    writeList("favorites", owner.favorites);
+    writeList("recent", owner.recent);
     for (const auto& [key, record] : owner.charts) {
         ofs << key << '=' << record.score << ',' << record.crown << ',' << record.scoreRank << '\n';
     }
@@ -236,6 +257,12 @@ bool PlayRecords::LoadCard(const std::string& cardId) {
     data.dispCourse = IndexOf(kCourseNames, settings["dispCrownCourse"].AsString("oni"), 3);
     data.options = OptionsFromJson(settings["options"]);
     data.playCount = root["stats"]["playCount"].AsInt(0);
+    for (const Json::Value& item : root["songLists"]["favorites"].Items()) {
+        if (!item.AsString().empty()) data.favorites.push_back(item.AsString());
+    }
+    for (const Json::Value& item : root["songLists"]["recent"].Items()) {
+        if (!item.AsString().empty()) data.recent.push_back(item.AsString());
+    }
     for (const Json::Value& item : root["records"].Items()) {
         const std::string songId = item["songId"].AsString();
         const int course = IndexOf(kCourseNames, item["course"].AsString(), -1);
@@ -298,6 +325,14 @@ void PlayRecords::SaveCard(const std::string& cardId) const {
     settings["dispCrownCourse"] = kCourseNames[std::clamp(data.dispCourse, 0, 4)];
     settings["options"] = OptionsToJson(data.options);
     root["stats"]["playCount"] = data.playCount;
+    {
+        Json::Value favorites = Json::Value::MakeArray();
+        for (const std::string& id : data.favorites) favorites.Push(Json::Value(id));
+        Json::Value recent = Json::Value::MakeArray();
+        for (const std::string& id : data.recent) recent.Push(Json::Value(id));
+        root["songLists"]["favorites"] = std::move(favorites);
+        root["songLists"]["recent"] = std::move(recent);
+    }
     Json::Value records = Json::Value::MakeArray();
     for (const auto& [key, record] : data.charts) {
         const size_t slash = key.rfind('/');
@@ -501,6 +536,39 @@ bool PlayRecords::AddDani(const std::string& owner, int level, const DaniRecord&
 PlayOptions PlayRecords::Options(const std::string& owner) {
     const OwnerData* data = Data(owner, false);
     return data ? data->options : PlayOptions();
+}
+
+std::vector<std::string> PlayRecords::Favorites(const std::string& owner) {
+    const OwnerData* data = Data(owner, false);
+    return data ? data->favorites : std::vector<std::string>();
+}
+
+std::vector<std::string> PlayRecords::Recent(const std::string& owner) {
+    const OwnerData* data = Data(owner, false);
+    return data ? data->recent : std::vector<std::string>();
+}
+
+bool PlayRecords::IsFavorite(const std::string& owner, const std::string& songId) {
+    const OwnerData* data = Data(owner, false);
+    return data && std::find(data->favorites.begin(), data->favorites.end(), songId) != data->favorites.end();
+}
+
+bool PlayRecords::ToggleFavorite(const std::string& owner, const std::string& songId) {
+    OwnerData* data = Data(owner, true);
+    auto found = std::find(data->favorites.begin(), data->favorites.end(), songId);
+    const bool added = found == data->favorites.end();
+    if (added) data->favorites.push_back(songId);
+    else data->favorites.erase(found);
+    Save(owner);
+    return added;
+}
+
+void PlayRecords::AddRecent(const std::string& owner, const std::string& songId) {
+    OwnerData* data = Data(owner, true);
+    data->recent.erase(std::remove(data->recent.begin(), data->recent.end(), songId), data->recent.end());
+    data->recent.insert(data->recent.begin(), songId);
+    if (data->recent.size() > kRecentMax) data->recent.resize(kRecentMax);
+    Save(owner);
 }
 
 void PlayRecords::SetOptions(const std::string& owner, const PlayOptions& options) {

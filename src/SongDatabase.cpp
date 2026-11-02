@@ -289,6 +289,21 @@ const std::vector<const SongInfo*>& SongDatabase::SongsInGenre(int genreNo) {
     return genreNo >= 0 && size_t(genreNo) < order_.size() ? order_[size_t(genreNo)] : kEmpty;
 }
 
+std::vector<const SongInfo*> SongDatabase::SongsByRecordIds(const std::vector<std::string>& ids) {
+    if (!loaded_) Load();
+    std::vector<const SongInfo*> out;
+    for (const std::string& id : ids) {
+        // 曲の記録 id は、fumen の曲が同じ曲名の Songs の曲を引き継ぐとき、Songs の曲の id になっている
+        for (const SongInfo& song : songs_) {
+            if (song.RecordId() == id) {
+                out.push_back(&song);
+                break;
+            }
+        }
+    }
+    return out;
+}
+
 const std::vector<GenreInfo>& SongDatabase::LevelFolders() {
     if (!loaded_) Load();
     return levelFolders_;
@@ -357,7 +372,10 @@ void SongDatabase::Load() {
         for (int g = 0; g < kGenreCount; ++g) {
             if (genre.id == kGenreIds[g]) genre.genreNo = g;
         }
-        // イベント・お気に入りなどのフォルダは中身を組み立てられないので出さない。曲の入っていないジャンルも出す
+        // お気に入りと最近遊んだ曲は、プレイヤーの記録から並べる専用のフォルダ
+        if (genre.id == "favorite") genre.genreNo = kGenreFavorite;
+        if (genre.id == "recent") genre.genreNo = kGenreRecent;
+        // イベントなどのフォルダは中身を組み立てられないので出さない。曲の入っていないジャンルも出す
         // バラエティ・クラシックの特集フォルダ（event3 / event4）は下で自分で足す
         if (genre.genreNo < 0 || genre.genreNo == kGenreVariety || genre.genreNo == kGenreClassic || genre.genreNo == kGenreCustom) continue;
         genres_.push_back(std::move(genre));
@@ -418,6 +436,10 @@ void SongDatabase::Load() {
         root.levelRoot = true;
         genres_.push_back(std::move(root));
     }
+    WordList::Get().Set("folder_favorite", "お気に入り");
+    WordList::Get().Set("genre_favorite", "お気に入り");
+    WordList::Get().Set("folder_recent", "最近遊んだ曲");
+    WordList::Get().Set("genre_recent", "最近遊んだ曲");
     WordList::Get().Set("folder_difficulty", "むずかしさをえらぶ");
     WordList::Get().Set("folder_intro_difficulty", "★の数からすきな曲をえらべるよ！");
     std::sort(genres_.begin(), genres_.end(), [](const GenreInfo& a, const GenreInfo& b) { return a.order < b.order; });
