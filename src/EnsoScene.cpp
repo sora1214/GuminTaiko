@@ -823,7 +823,7 @@ void EnsoScene::Update(float deltaTime) {
     }
 
     // 叩いた瞬間の音を鳴らすのは、叩きを受け付けているあいだだけ（ポーズ・暗転・演奏が終わったあと・特訓の停止中は鳴らさない）
-    HitAudio::SetMonitorActive(!isPaused_ && !leaving_ && !finished_ && !(training_ && trainingPaused_));
+    HitAudio::SetMonitorActive(!isPaused_ && !leaving_ && !(training_ && trainingPaused_));
 
     if (isPaused_) {
         pauseMenu_.Update(deltaTime);
@@ -1044,7 +1044,14 @@ void EnsoScene::UpdatePlayer(Player& player) {
     const double badWindow = f.windows[2];
 
     // ---- 入力 ----
-    if (!finished_) {
+    if (finished_) {
+        // 曲が終わったあと、リザルトへ行くまでも、叩いた音と太鼓は反応させる（判定・得点は動かさない）
+        const int p = player.index;
+        if (TaikoInput::IsHit(p, TaikoInput::Pad::LeftDon)) HitFeedback(player, true, false);
+        if (TaikoInput::IsHit(p, TaikoInput::Pad::RightDon)) HitFeedback(player, true, true);
+        if (TaikoInput::IsHit(p, TaikoInput::Pad::LeftKa)) HitFeedback(player, false, false);
+        if (TaikoInput::IsHit(p, TaikoInput::Pad::RightKa)) HitFeedback(player, false, true);
+    } else {
         const int p = player.index;
         if (TaikoInput::IsHit(p, TaikoInput::Pad::LeftDon)) Hit(player, true, false);
         if (TaikoInput::IsHit(p, TaikoInput::Pad::RightDon)) Hit(player, true, true);
@@ -1109,9 +1116,8 @@ void EnsoScene::UpdatePlayer(Player& player) {
     UpdateDisplays(player);
 }
 
-// 叩いた（面: don = true、ふち: false）
-void EnsoScene::Hit(Player& player, bool don, bool right) {
-    const Fumen& f = player.fumen;
+// 叩いたときの音と太鼓の動き（判定はしない）。曲が終わってリザルトへ行くまでの間も、これだけは出す
+void EnsoScene::HitFeedback(Player& player, bool don, bool right) {
     const std::vector<int> side = players_.size() >= 2 ? std::vector<int>{0, 1} : std::vector<int>{0};
     // 叩いた瞬間に監視が音を鳴らしていたら、ここでは鳴らさない（重ねない）
     const int pad = don ? (right ? int(TaikoInput::Pad::RightDon) : int(TaikoInput::Pad::LeftDon))
@@ -1123,6 +1129,12 @@ void EnsoScene::Hit(Player& player, bool don, bool right) {
     Goto(player.taiko.Clip(std::string(right ? "right_" : "left_") + (don ? "don" : "katsu")), "on", true);
     // レーンの光（叩いた色）。区切り 10 フレームだけ流して、何も出ていない頭のフレームに戻す
     PlayOnce(player.laneHit.Clip("effect"), don ? "don_s" : "katsu_s", 10, "", 0);
+}
+
+// 叩いた（面: don = true、ふち: false）
+void EnsoScene::Hit(Player& player, bool don, bool right) {
+    const Fumen& f = player.fumen;
+    HitFeedback(player, don, right);
 
     // 連打・風船の最中
     for (size_t i = player.first; i < player.notes.size(); ++i) {
@@ -1634,10 +1646,11 @@ void EnsoScene::Finish() {
         mc->GotoAndPlay("start");
     }
     const char* se = perfect ? "dondafullcombo_c" : fullCombo ? "fullcombo_c" : clear ? "clear_c" : "notclear_c";
-    if (VoiceOn(main)) SoundManager::Get().Play(kBankEnso, se);
+    // クリア・フルコンボ・失敗の効果音（ジングル）は、ボイスの設定に関係なく鳴らす。「ボイス」で消すのは声だけ
+    SoundManager::Get().Play(kBankEnso, se);
     if (fullCombo) {
         // 「フルコンボ！」の声は、クリア成功の文字のあと「フルコンボ」の文字が出る瞬間に合わせて鳴らす（UpdateResultVoice）
-        resultVoice_ = VoiceOn(main) ? (perfect ? "dondafullcombo_c" : "fullcombo_c") : nullptr;
+        resultVoice_ = perfect ? "dondafullcombo_c" : "fullcombo_c";   // 「ボイス」の設定に関係なく鳴らす
         resultVoiceClip_ = result_.Clip(clip);
         finishTimer_ = -1.0f;   // 文字が出るのが遅いので、リザルトへ行くのを少し遅らせる
         don_.SetNonLoopAnimation("full_combo", true);
@@ -3217,7 +3230,7 @@ void EnsoScene::DaniSongEnd() {
         mc->GotoAndPlay("start");
     }
     SoundManager::Get().Play(kBankDaniPlay, !red ? "notclear" : gold ? "clear_upper" : "clear_normal");
-    if (red && fullCombo && VoiceOn(player)) SoundManager::Get().Play(kBankVoice, perfect ? "dondafullcombo_c" : "fullcombo_c");
+    if (red && fullCombo) SoundManager::Get().Play(kBankVoice, perfect ? "dondafullcombo_c" : "fullcombo_c");
     if (fullCombo) don_.SetNonLoopAnimation("full_combo", true);
 }
 

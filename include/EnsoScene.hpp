@@ -261,6 +261,7 @@ private:
     // ---- 演奏オプション ----
     void ApplyNoteOptions(Player& player);          // あべこべ・ランダム（音符の色を入れ替える）
     bool VoiceOn(const Player& player) const { return player.options.voice; }
+    void HitFeedback(Player& player, bool don, bool right);   // 叩いた音と太鼓の動き（判定はしない）
     void UpdateResultVoice();                       // フルコンボの声を、文字が出る瞬間に鳴らす
     const char* resultVoice_ = nullptr;             // まだ鳴らしていない声（なければ nullptr）
     Lumen::MovieClip* resultVoiceClip_ = nullptr;   // その声に合わせる文字の動き
