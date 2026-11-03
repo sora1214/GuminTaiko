@@ -50,9 +50,30 @@ struct FumenMeasure {
     std::array<std::vector<FumenNote>, 3> notes;   // 普通・玄人・達人
 };
 
+// 譜面分岐 1 つ分（TJA の #BRANCHSTART から、次の #BRANCHSTART か #BRANCHEND の手前まで）。
+// この間は、普通・玄人・達人のどれかの譜面を流す（measures は普通、branchMeasures は玄人・達人）
+struct FumenBranch {
+    enum class Kind { Accuracy, Roll, Score };   // 精度（%）・連打数・得点
+    Kind kind = Kind::Accuracy;
+    double expert = 0.0;      // 玄人になる値（以上）
+    double master = 0.0;      // 達人になる値（以上）
+    double start = 0.0;       // 分岐の頭（ms）
+    double end = 0.0;         // 分岐の終わり（ms）。次の分岐か #BRANCHEND の時刻。なければ曲の終わりまで
+};
+
+// #LEVELHOLD: その譜面（level）を流しているあいだだけ、ここから先の分岐を動かさない
+struct FumenLevelHold {
+    double time = 0.0;
+    int level = 0;            // 0 普通 1 玄人 2 達人
+};
+
 struct Fumen {
     std::array<float, 3> windows{25.0f, 75.0f, 108.0f};   // 良・可・不可の判定幅（ms、片側）
     bool hasBranches = false;
+    std::vector<FumenBranch> branches;              // 時刻の順
+    std::array<std::vector<FumenMeasure>, 2> branchMeasures;   // 玄人・達人の譜面（分岐のある TJA だけ。音符は notes[0]）
+    std::vector<double> sections;                   // #SECTION の時刻（分岐の判定に使う成績を数え直す）
+    std::vector<FumenLevelHold> levelHolds;
     int hpMax = 10000;
     int hpClear = 8000;
     int hpGood = 0;

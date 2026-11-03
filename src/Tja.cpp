@@ -175,6 +175,10 @@ public:
     }
 
     bool HasBranches() const { return hasBranches_; }
+    // 分岐の条件と #SECTION は、普通譜面（branch = 0）の読み込みだけが集める。#LEVELHOLD は道ごとに集める
+    std::vector<FumenBranch> TakeBranches() { return std::move(branches_); }
+    std::vector<double> TakeSections() { return std::move(sections_); }
+    std::vector<FumenLevelHold> TakeLevelHolds() { return std::move(levelHolds_); }
 
 private:
     struct State {
@@ -188,13 +192,41 @@ private:
 
     bool Skipping() const { return section_ >= 0 && section_ != branch_; }
 
+    // #BRANCHSTART 種類,玄人,達人（種類: p 精度 r 連打数 s 得点）
+    void OpenBranch(const std::string& arg) {
+        FumenBranch branch;
+        branch.start = s_.time;
+        branch.end = 1.0e18;
+        const size_t comma = arg.find(',');
+        const std::string kind = arg.substr(0, comma);
+        const size_t letter = kind.find_first_not_of(" \t");
+        const char c = letter == std::string::npos ? 'p' : char(std::tolower(static_cast<unsigned char>(kind[letter])));
+        branch.kind = c == 'r' ? FumenBranch::Kind::Roll : c == 's' ? FumenBranch::Kind::Score : FumenBranch::Kind::Accuracy;
+        if (comma != std::string::npos) {
+            const size_t second = arg.find(',', comma + 1);
+            branch.expert = std::atof(arg.c_str() + comma + 1);
+            if (second != std::string::npos) branch.master = std::atof(arg.c_str() + second + 1);
+        }
+        branches_.push_back(branch);
+        branchOpen_ = true;
+    }
+
+    // 開いている分岐を、いまの時刻で閉じる（次の #BRANCHSTART か #BRANCHEND）
+    void CloseBranch() {
+        if (branch_ != 0 || !branchOpen_) return;
+        branches_.back().end = s_.time;
+        branchOpen_ = false;
+    }
+
     void Command(const std::string& line) {
         std::string name, arg;
         SplitCommand(line, name, arg);
         if (name == "BRANCHSTART") {
             hasBranches_ = true;
+            CloseBranch();
             saved_ = s_;
             section_ = -1;
+            if (branch_ == 0) OpenBranch(arg);
             return;
         }
         if (name == "N" || name == "E" || name == "M") {
@@ -203,7 +235,19 @@ private:
             return;
         }
         if (name == "BRANCHEND") {
+            CloseBranch();
             section_ = -1;
+            return;
+        }
+        if (name == "SECTION") {
+            // 分岐の判定に使う成績を数え直す位置。次の #BRANCHSTART の直前に、#M の区間の終わりとして書かれることが多く
+            // （#BRANCHEND がないので、普通譜面の読み込みは読み飛ばしている区間）、どの道を通っても効くので、読み飛ばさずに集める
+            if (branch_ == 0 && (sections_.empty() || sections_.back() != s_.time)) sections_.push_back(s_.time);
+            return;
+        }
+        if (name == "LEVELHOLD") {
+            // 分岐を動かさなくする位置。#M の中だけに書かれることもあり、その道を通っている人だけに効く
+            if (!Skipping()) levelHolds_.push_back({s_.time, branch_});
             return;
         }
         if (Skipping()) return;
@@ -334,6 +378,10 @@ private:
     State s_, saved_;
     int section_ = -1;   // -1: 分岐の外（どの分岐にも入れる） 0〜2: 普通・玄人・達人
     bool hasBranches_ = false;
+    std::vector<FumenBranch> branches_;
+    std::vector<double> sections_;
+    std::vector<FumenLevelHold> levelHolds_;
+    bool branchOpen_ = false;
     std::string notes_;
     std::vector<Pending> commands_;
     size_t balloonIndex_ = 0;
@@ -497,20 +545,24 @@ bool LoadTja(const std::string& path, int course, Fumen& out, std::string* error
     }
     if (!found) return Fail(error, "TJA にこの難易度の譜面がありません: " + path);
 
-    // 分岐ごとに読み、普通譜面の小節に玄人・達人の音符を入れる（小節の数が合わないときは普通譜面を使う）
+    // 分岐ごとに読む。普通譜面が measures で、分岐のある譜面は玄人・達人を branchMeasures に丸ごと持つ
+    // （分岐のあいだは BPM・スクロール・ゴーゴーも分岐ごとに違ってよいので、小節ごと別に持つ）
+    const auto byTime = [](const FumenMeasure& a, const FumenMeasure& b) { return a.time < b.time; };
     ChartParser normal(chart, 0);
     out.measures = normal.Parse();
     out.hasBranches = normal.HasBranches();
-    for (int b = 1; b < 3; ++b) {
-        std::vector<FumenMeasure> other;
-        if (out.hasBranches) other = ChartParser(chart, b).Parse();
-        const bool match = other.size() == out.measures.size();
-        for (size_t i = 0; i < out.measures.size(); ++i) {
-            out.measures[i].notes[size_t(b)] = match ? other[i].notes[0] : out.measures[i].notes[0];
+    std::stable_sort(out.measures.begin(), out.measures.end(), byTime);
+    if (out.hasBranches) {
+        out.branches = normal.TakeBranches();
+        out.sections = normal.TakeSections();
+        out.levelHolds = normal.TakeLevelHolds();
+        for (int b = 1; b < 3; ++b) {
+            ChartParser other(chart, b);
+            out.branchMeasures[size_t(b - 1)] = other.Parse();
+            std::stable_sort(out.branchMeasures[size_t(b - 1)].begin(), out.branchMeasures[size_t(b - 1)].end(), byTime);
+            for (const FumenLevelHold& hold : other.TakeLevelHolds()) out.levelHolds.push_back(hold);
         }
     }
-    std::stable_sort(out.measures.begin(), out.measures.end(),
-                     [](const FumenMeasure& a, const FumenMeasure& b) { return a.time < b.time; });
 
     MakeGauge(course, out);
     return true;

@@ -147,6 +147,25 @@ void Goto(Lumen::MovieClip* clip, const std::string& label, bool play = false) {
     else clip->GotoAndStop(label);
 }
 
+// 時刻が何番目の分岐のあいだにあるか（なければ -1）。小節の頭の時刻はミリ秒のずれを見込む
+int BranchAt(const Fumen& fumen, double time) {
+    for (size_t i = 0; i < fumen.branches.size(); ++i) {
+        if (time >= fumen.branches[i].start - 0.5 && time < fumen.branches[i].end - 0.5) return int(i);
+    }
+    return -1;
+}
+
+// 分岐に入るときのレーンの動き（[いま][次]。いまが -1 は分岐に入る前で、最初は普通譜面から始まる）
+const char* BranchMove(int from, int to) {
+    static const char* const kMoves[4][3] = {
+        {"normal_start", "normal_kurouto", "normal_tatsujin"},    // 分岐の前
+        {nullptr, "normal_kurouto", "normal_tatsujin"},           // 普通から
+        {"kurouto_normal", nullptr, "kurouto_tatsujin"},          // 玄人から
+        {"tatsujin_normal", "tatsujin_kurouto", nullptr},         // 達人から
+    };
+    return kMoves[std::clamp(from, -1, 2) + 1][std::clamp(to, 0, 2)];
+}
+
 std::string Side(const std::vector<int>& joined, int player) {
     if (joined.size() <= 1) return "_c";
     return player == 0 ? "_l" : "_r";
@@ -514,22 +533,25 @@ bool EnsoScene::SetupPlayer(Player& player, int index, int players) {
     player.shinuti = std::max(10, player.fumen.shinuti > 0 ? player.fumen.shinuti : song_.shinuti[size_t(player.course)]);
     player.laneY = kLaneTop + (players >= 2 && index == 1 ? kLaneHeight : 0.0f);
 
-    // 音符・小節線・ゴーゴーを並べる（分岐は普通譜面）
+    // 音符・小節線・ゴーゴーを並べる。譜面分岐のある譜面は、分岐の外だけを先に並べ、分岐のあいだは
+    // 演奏しながら決めた譜面（普通・玄人・達人）のものを差し込む。段位道場と特訓モードは分岐せず、普通譜面のまま
+    if (!player.fumen.hasBranches || dani_ || startTraining) player.fumen.branches.clear();
     for (const FumenMeasure& m : player.fumen.measures) {
-        if (m.barline) {
-            player.bars.push_back(m.time);
-            player.barBpm.push_back(m.bpm);
-            player.barScroll.push_back(m.scroll[0]);
-        }
-        if (player.gogo.empty() ? m.gogo : m.gogo != player.gogo.back().second) player.gogo.emplace_back(m.time, m.gogo);
+        if (BranchAt(player.fumen, m.time) >= 0) continue;
         for (const FumenNote& n : m.notes[0]) {
             Note note;
             note.src = n;
             player.notes.push_back(note);
-            lastTime_ = std::max(lastTime_, n.time + n.duration);
+        }
+    }
+    for (const std::vector<FumenMeasure>* lane : {&player.fumen.measures, &player.fumen.branchMeasures[0], &player.fumen.branchMeasures[1]}) {
+        for (const FumenMeasure& m : *lane) {
+            for (const FumenNote& n : m.notes[0]) lastTime_ = std::max(lastTime_, n.time + n.duration);
         }
     }
     std::stable_sort(player.notes.begin(), player.notes.end(), [](const Note& a, const Note& b) { return a.src.time < b.src.time; });
+    SetupBranches(player);
+    BuildTimeline(player);
 
     // ---- 演奏オプション ----
     player.options = pd.Player(index).options;
@@ -545,6 +567,16 @@ bool EnsoScene::SetupPlayer(Player& player, int index, int players) {
     Goto(player.lane.Root(), layout);
     player.laneHit.Load(std::string(kDir) + "lane/lane_hit", band);
     Goto(player.laneHit.Clip("branch"), "no_bunki");
+    // 「何譜面」の文字は、動きの中のもの（縁が濃く、すぐ消える）を隠し、DrawBranchLabel で常に出す
+    GameFont::Get().Preload("普通譜面玄人達人");
+    for (const char* name : {"normal", "pro", "expert"}) {
+        if (Lumen::MovieClip* moji = player.laneHit.Clip(std::string("branch/") + name + "_moji")) {
+            Lumen::MovieClip::TextStyle style;
+            style.fill.a = 0;
+            style.outline.a = 0;
+            moji->SetTextStyle(std::string(name) + "_text", style);
+        }
+    }
     Goto(player.laneHit.Clip("gogo"), "normal");
     Goto(player.laneHit.Clip("hit_effect"), "no_onp");
     player.laneLeft.Load(std::string(kDir) + "lane/lane_left", band);
@@ -740,7 +772,7 @@ void EnsoScene::SetupNoteSprites() {
 
 // あべこべ（ドンとカッをすべて入れ替える）とランダム（きまぐれ・でたらめの割合で入れ替える）。
 // 大音符・手をつなぐ音符も同じ大きさのまま色だけ変える。連打・風船はそのまま
-void EnsoScene::ApplyNoteOptions(Player& player) {
+void EnsoScene::ApplyNoteOptions(Player& player, size_t from) {
     const PlayOptions& options = player.options;
     const double rate = options.random == 1 ? kKimagureRate : options.random == 2 ? kDetarameRate : 0.0;
     if (!options.abekobe && rate <= 0.0) return;
@@ -759,11 +791,169 @@ void EnsoScene::ApplyNoteOptions(Player& player) {
         default: return type;
         }
     };
-    for (Note& note : player.notes) {
+    for (size_t i = from; i < player.notes.size(); ++i) {
+        Note& note = player.notes[i];
         if (!note.src.IsHit()) continue;
         bool swap = options.abekobe;
         if (rate > 0.0 && uniform(random) < rate) swap = !swap;
         if (swap) note.src.type = flip(note.src.type);
+    }
+}
+
+// ---- 譜面分岐 ----
+// 本家と同じく、分岐の1小節前（その小節の頭）に、#SECTION からそこまでの成績で、普通・玄人・達人を決める。
+// 決めたら、その譜面の音符を差し込む。分岐の頭の小節線が判定枠に届いたところで、レーンの表示を切り替える。
+// #LEVELHOLD を過ぎたら、あとは判定せず、いまの譜面のまま流す
+
+void EnsoScene::SetupBranches(Player& player) {
+    BranchRun& run = player.branch;
+    run = BranchRun();
+    const Fumen& f = player.fumen;
+    run.decided.assign(f.branches.size(), -1);
+    if (f.branches.empty()) return;
+    for (const FumenLevelHold& hold : f.levelHolds) run.events.push_back({hold.time, BranchEvent::Kind::Hold, size_t(hold.level)});
+    for (double time : f.sections) run.events.push_back({time, BranchEvent::Kind::Section, 0});
+    for (size_t i = 0; i < f.branches.size(); ++i) {
+        const double start = f.branches[i].start;
+        // 1小節前 = 分岐の頭より前で、いちばん近い小節の頭。なければ曲の頭で決める
+        double decide = -kLeadIn - 1.0;
+        for (const FumenMeasure& m : f.measures) {
+            if (m.time < start - 1.0) decide = std::max(decide, m.time);
+        }
+        run.events.push_back({decide, BranchEvent::Kind::Decide, i});
+        run.events.push_back({start, BranchEvent::Kind::Show, i});
+    }
+    std::stable_sort(run.events.begin(), run.events.end(), [](const BranchEvent& a, const BranchEvent& b) {
+        return a.time != b.time ? a.time < b.time : a.kind < b.kind;
+    });
+}
+
+void EnsoScene::BuildTimeline(Player& player) {
+    const Fumen& f = player.fumen;
+    // 分岐の外は普通譜面、分岐のあいだは決めた譜面（まだ決めていなければ、いま流している譜面）の小節
+    std::vector<const FumenMeasure*> measures;
+    for (const FumenMeasure& m : f.measures) {
+        if (BranchAt(f, m.time) < 0) measures.push_back(&m);
+    }
+    for (size_t b = 0; b < f.branches.size(); ++b) {
+        const int level = player.branch.decided[b] >= 0 ? player.branch.decided[b] : player.branch.level;
+        const std::vector<FumenMeasure>& source = level == 0 ? f.measures : f.branchMeasures[size_t(level - 1)];
+        for (const FumenMeasure& m : source) {
+            if (m.time >= f.branches[b].start - 0.5 && m.time < f.branches[b].end - 0.5) measures.push_back(&m);
+        }
+    }
+    std::stable_sort(measures.begin(), measures.end(), [](const FumenMeasure* a, const FumenMeasure* b) { return a->time < b->time; });
+
+    player.bars.clear();
+    player.barBpm.clear();
+    player.barScroll.clear();
+    player.barBranch.clear();
+    player.gogo.clear();
+    int headOf = -1;
+    for (const FumenMeasure* m : measures) {
+        if (m->barline) {
+            player.bars.push_back(m->time);
+            player.barBpm.push_back(m->bpm);
+            player.barScroll.push_back(m->scroll[0]);
+            const int branch = BranchAt(f, m->time);
+            player.barBranch.push_back(branch >= 0 && branch != headOf);
+            if (branch >= 0) headOf = branch;
+        }
+        if (player.gogo.empty() ? m->gogo : m->gogo != player.gogo.back().second) player.gogo.emplace_back(m->time, m->gogo);
+    }
+}
+
+void EnsoScene::InsertBranchNotes(Player& player, size_t branch, int level) {
+    const Fumen& f = player.fumen;
+    const std::vector<FumenMeasure>& source = level == 0 ? f.measures : f.branchMeasures[size_t(level - 1)];
+    const size_t from = player.notes.size();
+    for (const FumenMeasure& m : source) {
+        if (m.time < f.branches[branch].start - 0.5 || m.time >= f.branches[branch].end - 0.5) continue;
+        for (const FumenNote& n : m.notes[0]) {
+            Note note;
+            note.src = n;
+            player.notes.push_back(note);
+        }
+    }
+    ApplyNoteOptions(player, from);
+    // 差し込む音符はまだ先（分岐の頭より前の音符には触れない）。first より前の並びは変わらない
+    std::stable_sort(player.notes.begin() + long(player.first), player.notes.end(),
+                     [](const Note& a, const Note& b) { return a.src.time < b.src.time; });
+}
+
+void EnsoScene::UpdateBranch(Player& player) {
+    BranchRun& run = player.branch;
+    while (run.next < run.events.size() && run.events[run.next].time <= clock_) {
+        const BranchEvent event = run.events[run.next++];
+        switch (event.kind) {
+        case BranchEvent::Kind::Hold:
+            if (run.level == int(event.index)) run.hold = true;   // その譜面を流しているときだけ効く
+            break;
+        case BranchEvent::Kind::Section:
+            run.baseGood = player.good;
+            run.baseOk = player.ok;
+            run.baseBad = player.bad;
+            run.baseRolls = player.rolls;
+            run.baseScore = player.score;
+            break;
+        case BranchEvent::Kind::Decide: {
+            const FumenBranch& branch = player.fumen.branches[event.index];
+            if (!run.hold) {
+                double value = 0.0;
+                if (branch.kind == FumenBranch::Kind::Roll) {
+                    value = player.rolls - run.baseRolls;
+                } else if (branch.kind == FumenBranch::Kind::Score) {
+                    value = player.score - run.baseScore;
+                } else {
+                    const int good = player.good - run.baseGood, ok = player.ok - run.baseOk, bad = player.bad - run.baseBad;
+                    const int judged = good + ok + bad;
+                    value = judged > 0 ? (good + ok * 0.5) / judged * 100.0 : 0.0;
+                }
+                run.level = value >= branch.master ? 2 : value >= branch.expert ? 1 : 0;
+            }
+            run.decided[event.index] = run.level;
+            TraceLog(LOG_INFO, "EnsoScene: %dP 分岐 %zu 番目 → %s（時計 %.0f ms、分岐の頭 %.0f ms、実時間 %.2f 秒）", player.index + 1,
+                     event.index + 1, run.level == 2 ? "達人" : run.level == 1 ? "玄人" : "普通", clock_, branch.start, GetTime());
+            InsertBranchNotes(player, event.index, run.level);
+            BuildTimeline(player);
+            break;
+        }
+        case BranchEvent::Kind::Show:
+            ShowBranch(player, event.index);
+            break;
+        }
+    }
+}
+
+// 譜面分岐のある譜面は、いま流している譜面（普通・玄人・達人）を、レーンの右に常に出す（音符はこの上を流れる）
+void EnsoScene::DrawBranchLabel(const Player& player) {
+    if (player.fumen.branches.empty()) return;
+    static const char* const kLabels[] = {"普通譜面", "玄人譜面", "達人譜面"};
+    const int level = std::clamp(player.branch.shown, 0, 2);
+    constexpr float kSize = 56.0f;
+    GameFont::Get().Draw(kLabels[level], 1890.0f, player.laneY + kNoteY - kSize * 0.55f, kSize, Color{255, 255, 255, 235},
+                         TextAlign::Right, 2.5f, Color{0, 0, 0, 40});
+}
+
+void EnsoScene::ShowBranch(Player& player, size_t branch) {
+    BranchRun& run = player.branch;
+    const int level = run.decided[branch] >= 0 ? run.decided[branch] : run.level;
+    const int from = run.shown;
+    run.shown = level;
+    TraceLog(LOG_INFO, "EnsoScene: %dP 分岐 %zu 番目の頭（表示 %d → %d、時計 %.0f ms、実時間 %.2f 秒）", player.index + 1, branch + 1, from, level,
+             clock_, GetTime());
+    if (level == from) return;
+    if (const char* move = BranchMove(from, level)) Goto(player.laneHit.Clip("branch"), move, true);
+
+    // 上がった・下がったの表示は、1P の分だけ出す（ふつうから始まるので、最初に玄人・達人なら上がった扱い）
+    if (player.index != players_.front().index) return;
+    const bool up = level > std::max(from, 0);
+    const bool down = from >= 0 && level < from;
+    if (!up && !down) return;
+    if (Lumen::MovieClip* root = branchEffect_.Root()) {
+        root->SetVisible(true);
+        Goto(root, up ? "level_up" : "level_down", true);
+        Schedule(root, "wait", 1.0f, false, true);
     }
 }
 
@@ -1042,6 +1232,8 @@ void EnsoScene::UpdateClock(float dt) {
 void EnsoScene::UpdatePlayer(Player& player) {
     const Fumen& f = player.fumen;
     const double badWindow = f.windows[2];
+
+    UpdateBranch(player);
 
     // ---- 入力 ----
     if (finished_) {
@@ -1711,6 +1903,7 @@ void EnsoScene::Draw() {
         player.gauge.Draw();
         player.lane.Draw();
         player.laneHit.Draw();
+        DrawBranchLabel(player);
         DrawNotes(player);
         player.hitEffect.Draw();
         // 叩いて飛んでいく音符。遅れて叩くと判定枠より左（ミニ太鼓の板の上）から飛び立つので、板の裏から出てくるように、
@@ -1756,11 +1949,18 @@ void EnsoScene::DrawNotes(const Player& player) {
 
     // 小節線
     if (bar_) {
+        bool branchBar = false;   // いま bar_ が分岐の頭の小節線（黄色）になっているか
         for (size_t i = 0; i < player.bars.size(); ++i) {
             const float x = NoteX(player, player.bars[i], player.barBpm[i], player.barScroll[i]);
             if (x < -100.0f || x > kSpawnX + 100.0f) continue;   // 音符と同じく、レーン左の板の裏まで流す
+            const bool head = i < player.barBranch.size() && player.barBranch[i];
+            if (head != branchBar) {
+                Goto(bar_, head ? "branchbar" : "bar");
+                branchBar = head;
+            }
             Lumen::DrawClip(bar_, Translate(x, y));
         }
+        if (branchBar) Goto(bar_, "bar");
     }
 
     // 遠いものから描き、近い音符を上に重ねる。特訓モードで止めているあいだは、叩いた音符も譜面どおりに出す

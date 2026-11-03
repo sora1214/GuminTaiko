@@ -66,6 +66,24 @@ private:
         double brokeAt = -1.0;     // 風船・くす玉が割れた時刻（特訓モードの吹き出しの色）
     };
 
+    // 譜面分岐の進み具合。本家どおり、分岐の1小節前までの成績で、分岐の頭に入る前に譜面を決める
+    struct BranchEvent {
+        enum class Kind { Hold, Decide, Show, Section };   // 同じ時刻なら、この順に処理する
+        double time = 0.0;
+        Kind kind = Kind::Section;
+        size_t index = 0;          // 何番目の分岐か（Decide・Show）
+    };
+    struct BranchRun {
+        std::vector<BranchEvent> events;   // 時刻の順
+        size_t next = 0;
+        std::vector<int> decided;  // 分岐ごとに決めた譜面（0 普通 1 玄人 2 達人。まだなら -1）
+        int level = 0;             // いま流している譜面
+        int shown = -1;            // レーンに出している譜面（-1: まだ分岐に入っていない）
+        bool hold = false;         // #LEVELHOLD を過ぎた（以降は譜面を動かさない）
+        // 判定に使う成績の数え始め（#SECTION のたびに、そのときの値を控える）
+        int baseGood = 0, baseOk = 0, baseBad = 0, baseRolls = 0, baseScore = 0;
+    };
+
     struct Player {
         bool active = false;
         int index = 0;             // 0: 1P 1: 2P
@@ -74,6 +92,8 @@ private:
         std::vector<Note> notes;   // 叩く時刻の順
         std::vector<double> bars;  // 小節線の時刻
         std::vector<double> barBpm, barScroll;
+        std::vector<char> barBranch;   // 分岐の頭の小節線（黄色く描く）
+        BranchRun branch;
         std::vector<std::pair<double, bool>> gogo;   // ゴーゴータイムの切り替わり
         float laneY = 276.0f;      // レーンの帯の上端
 
@@ -259,7 +279,13 @@ private:
     std::array<float, 3> daniInfoTint_ = {1.0f, 1.0f, 1.0f};   // ジャンルの板の色
 
     // ---- 演奏オプション ----
-    void ApplyNoteOptions(Player& player);          // あべこべ・ランダム（音符の色を入れ替える）
+    void ApplyNoteOptions(Player& player, size_t from = 0);   // あべこべ・ランダム（音符の色を入れ替える。from 番目から）
+    void SetupBranches(Player& player);             // 譜面分岐の判定と表示の予定を立てる
+    void BuildTimeline(Player& player);             // 小節線とゴーゴーを、いま流す譜面で並べ直す
+    void InsertBranchNotes(Player& player, size_t branch, int level);   // 決めた譜面の音符を差し込む
+    void UpdateBranch(Player& player);              // 時刻が来た予定（判定・表示・成績の数え直し）を進める
+    void DrawBranchLabel(const Player& player);     // 「普通譜面・玄人譜面・達人譜面」をレーンの右に出す
+    void ShowBranch(Player& player, size_t branch); // レーンの色と「普通・玄人・達人」の表示を切り替える
     bool VoiceOn(const Player& player) const { return player.options.voice; }
     void HitFeedback(Player& player, bool don, bool right);   // 叩いた音と太鼓の動き（判定はしない）
     void UpdateResultVoice();                       // フルコンボの声を、文字が出る瞬間に鳴らす

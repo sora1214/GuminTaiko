@@ -7,7 +7,8 @@
 // TJA 形式の譜面（太鼓さん次郎・TJAPlayer などの譜面ファイル）
 //   ヘッダー: TITLE / SUBTITLE / BPM / WAVE / OFFSET / DEMOSTART / GENRE / COURSE / LEVEL / BALLOON
 //   命令: #START [P1|P2] / #END / #MEASURE / #BPMCHANGE / #SCROLL / #GOGOSTART / #GOGOEND / #DELAY
-//         #BARLINEON / #BARLINEOFF / #BRANCHSTART / #N / #E / #M / #BRANCHEND（そのほかは読み飛ばす）
+//         #BARLINEON / #BARLINEOFF / #BRANCHSTART p|r|s,玄人,達人 / #N / #E / #M / #BRANCHEND / #SECTION / #LEVELHOLD
+//         （そのほかは読み飛ばす）
 //   音符: 1 ドン 2 カッ 3 大ドン 4 大カッ 5 連打 6 大連打 7 風船 8 連打・風船の終わり 9 くす玉
 //         A 手をつないだ大ドン B 手をつないだ大カッ（C 爆弾・F アドリブなどは置かない）
 // 文字コードは UTF-8（BOM あり・なし）と Shift_JIS に対応する。パスは UTF-8 で渡す。
