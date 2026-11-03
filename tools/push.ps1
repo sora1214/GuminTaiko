@@ -13,7 +13,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 
 & git add -A
-$bad = git diff --cached --name-only | Select-String -Pattern '^keys/|private\.key|^Backup/|^Songs/|\.ogg$|.mp3$|.zip$'
+$bad = git diff --cached --name-only | Select-String -Pattern '^keys/|private\.key|^Backup/|^Songs/|\.ogg$|\.mp3$|\.zip$'
 if ($bad) {
     & git reset -q
     throw "上げてはいけないものが入っています: $($bad[0])"
