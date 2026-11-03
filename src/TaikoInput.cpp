@@ -1,5 +1,6 @@
 #include "TaikoInput.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -43,8 +44,18 @@ const ActionInfo kActions[kActionCount] = {
     {"Training", "TRAINING MODE", {KEY_F2, KEY_NULL}},
 };
 
-int g_keys[kActionCount][kKeySlots] = {};
+int g_profiles[kProfileCount][kActionCount][kKeySlots] = {};
+int g_active = 0;
 bool g_loaded = false;
+
+// 使っている設定の割り当て
+int (&Keys())[kActionCount][kKeySlots] { return g_profiles[g_active]; }
+
+void FillDefault(int profile) {
+    for (int a = 0; a < kActionCount; ++a) {
+        for (int s = 0; s < kKeySlots; ++s) g_profiles[profile][a][s] = kActions[a].keys[s];
+    }
+}
 
 GLFWkeyfun g_raylibKeyCallback = nullptr;
 
@@ -69,22 +80,32 @@ void EnsureLoaded() {
 
 void LoadBindings() {
     g_loaded = true;
-    for (int a = 0; a < kActionCount; ++a) {
-        for (int s = 0; s < kKeySlots; ++s) g_keys[a][s] = kActions[a].keys[s];
-    }
+    g_active = 0;
+    for (int p = 0; p < kProfileCount; ++p) FillDefault(p);
     std::ifstream ifs(kPath);
     std::string line;
+    int profile = 0;   // 「[2]」のような見出しのない古い形式は、1つめの設定として読む
     while (std::getline(ifs, line)) {
-        // 「P1KaLeft=68,263」
+        while (!line.empty() && (line.back() == '\r' || line.back() == ' ')) line.pop_back();
+        // 「[2]」: 2つめの設定の始まり
+        if (line.size() >= 3 && line.front() == '[' && line.back() == ']') {
+            profile = std::clamp(std::atoi(line.substr(1, line.size() - 2).c_str()) - 1, 0, kProfileCount - 1);
+            continue;
+        }
+        // 「P1KaLeft=68,263」「active=2」
         const size_t eq = line.find('=');
         if (eq == std::string::npos) continue;
         const std::string id = line.substr(0, eq);
+        const std::string value = line.substr(eq + 1);
+        if (id == "active") {
+            g_active = std::clamp(std::atoi(value.c_str()) - 1, 0, kProfileCount - 1);
+            continue;
+        }
         for (int a = 0; a < kActionCount; ++a) {
             if (id != kActions[a].id) continue;
-            const std::string value = line.substr(eq + 1);
             const size_t comma = value.find(',');
-            g_keys[a][0] = std::atoi(value.substr(0, comma).c_str());
-            g_keys[a][1] = comma == std::string::npos ? 0 : std::atoi(value.substr(comma + 1).c_str());
+            g_profiles[profile][a][0] = std::atoi(value.substr(0, comma).c_str());
+            g_profiles[profile][a][1] = comma == std::string::npos ? 0 : std::atoi(value.substr(comma + 1).c_str());
         }
     }
 }
@@ -94,20 +115,34 @@ void SaveBindings() {
     std::filesystem::create_directories(kDir, ec);
     std::ofstream ofs(kPath, std::ios::trunc);
     if (!ofs) return;
-    for (int a = 0; a < kActionCount; ++a) ofs << kActions[a].id << '=' << g_keys[a][0] << ',' << g_keys[a][1] << '\n';
+    ofs << "active=" << g_active + 1 << '\n';
+    for (int p = 0; p < kProfileCount; ++p) {
+        ofs << '[' << p + 1 << "]\n";
+        for (int a = 0; a < kActionCount; ++a) ofs << kActions[a].id << '=' << g_profiles[p][a][0] << ',' << g_profiles[p][a][1] << '\n';
+    }
 }
 
 void ResetBindings() {
-    for (int a = 0; a < kActionCount; ++a) {
-        for (int s = 0; s < kKeySlots; ++s) g_keys[a][s] = kActions[a].keys[s];
-    }
+    EnsureLoaded();
+    FillDefault(g_active);   // 使っている設定だけ初期値に戻す
+    SaveBindings();
+}
+
+int ActiveProfile() {
+    EnsureLoaded();
+    return g_active;
+}
+
+void SetActiveProfile(int profile) {
+    EnsureLoaded();
+    g_active = ((profile % kProfileCount) + kProfileCount) % kProfileCount;
     SaveBindings();
 }
 
 int BoundKey(Action action, int slot) {
     EnsureLoaded();
     if (int(action) < 0 || int(action) >= kActionCount || slot < 0 || slot >= kKeySlots) return 0;
-    return g_keys[int(action)][slot];
+    return Keys()[int(action)][slot];
 }
 
 int DefaultKey(Action action, int slot) {
@@ -158,11 +193,11 @@ bool SetBoundKey(Action action, int slot, int key) {
         for (int a = 0; a < kActionCount; ++a) {
             if (MayShare(action, Action(a))) continue;
             for (int s = 0; s < kKeySlots; ++s) {
-                if (g_keys[a][s] == key && !(a == int(action) && s == slot)) g_keys[a][s] = 0;
+                if (Keys()[a][s] == key && !(a == int(action) && s == slot)) Keys()[a][s] = 0;
             }
         }
     }
-    g_keys[int(action)][slot] = key;
+    Keys()[int(action)][slot] = key;
     SaveBindings();
     return true;
 }
@@ -231,7 +266,7 @@ std::string KeyName(int key) {
 
 bool ActionPressed(Action action) {
     EnsureLoaded();
-    for (int key : g_keys[int(action)]) {
+    for (int key : Keys()[int(action)]) {
         if (key != 0 && KeyPressed(key)) return true;
     }
     return false;
@@ -239,7 +274,7 @@ bool ActionPressed(Action action) {
 
 bool ActionDown(Action action) {
     EnsureLoaded();
-    for (int key : g_keys[int(action)]) {
+    for (int key : Keys()[int(action)]) {
         if (key != 0 && IsKeyDown(key)) return true;
     }
     return false;
@@ -247,7 +282,7 @@ bool ActionDown(Action action) {
 
 bool ActionRepeat(Action action) {
     EnsureLoaded();
-    for (int key : g_keys[int(action)]) {
+    for (int key : Keys()[int(action)]) {
         if (key != 0 && IsKeyPressedRepeat(key)) return true;
     }
     return false;

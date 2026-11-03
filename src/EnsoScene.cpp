@@ -647,8 +647,12 @@ bool EnsoScene::SetupPlayer(Player& player, int index, int players) {
 
     // ネームプレートは 1P ではパネルの下のふちにかかる位置、2P（スコアが下に来る）では上
     //   （本家の演奏画面: 1P の丸の中心が画面の (68, 494) あたり）
+    //   位置を動かすときは、下の値を変える（x: 大きいほど右 / y: 大きいほど下。単位はピクセル）
+    constexpr float kPlateX = 160.0f;
+    constexpr float kPlateY1P = 217.0f;   // 1P（レーンの上端からの y）
+    constexpr float kPlateY2P = 40.0f;    // 2P（2人で遊ぶとき）
     const bool lower = players >= 2 && index == 1;
-    player.plate.Load("lumen/000_default/common/name_plate", {190.0f, player.laneY + (lower ? 40.0f : 217.0f)});
+    player.plate.Load("lumen/000_default/common/name_plate", {kPlateX, player.laneY + (lower ? kPlateY2P : kPlateY1P)});
     CommonParts::SetNamePlate(player.plate.Root(), index);
     return true;
 }
@@ -812,6 +816,12 @@ void EnsoScene::Update(float deltaTime) {
         return;
     }
 
+    // 画面を作った直後は、読み込みで最初のフレームが長くなる。そのまま進めると襖の動きが飛んでカクつくので、少しのあいだ上限をつける
+    if (warmupFrames_ < 6) {
+        ++warmupFrames_;
+        deltaTime = std::min(deltaTime, 1.0f / 60.0f);
+    }
+
     // 叩いた瞬間の音を鳴らすのは、叩きを受け付けているあいだだけ（ポーズ・暗転・演奏が終わったあと・特訓の停止中は鳴らさない）
     HitAudio::SetMonitorActive(!isPaused_ && !leaving_ && !finished_ && !(training_ && trainingPaused_));
 
@@ -836,6 +846,14 @@ void EnsoScene::Update(float deltaTime) {
     if (leaving_ && !finished_) return;   // 暗転している
     if (training_) {
         for (float& flash : trainingButtonFlash_) flash = std::max(0.0f, flash - deltaTime);
+        // 叩いた面・ふちを太鼓の絵で光らせる
+        for (int p = 0; p < 2; ++p) {
+            for (int pad = 0; pad < 4; ++pad) {
+                float& flash = trainingHitFlash_[p][pad];
+                flash = std::max(0.0f, flash - deltaTime);
+                if (TaikoInput::IsHit(p, TaikoInput::Pad(pad))) flash = 0.12f;
+            }
+        }
     }
     if (training_ && trainingPaused_) {
         UpdateTraining(deltaTime);
@@ -930,6 +948,7 @@ void EnsoScene::Update(float deltaTime) {
     }
     if (finished_ && !leaving_ && !dani_) {
         finishTimer_ += deltaTime;
+        UpdateResultVoice();
         if (finishTimer_ >= kResultSeconds) {
             // この画面は黒いフェードが終わるまで後ろに描かれる
             leaving_ = true;
@@ -1617,9 +1636,22 @@ void EnsoScene::Finish() {
     const char* se = perfect ? "dondafullcombo_c" : fullCombo ? "fullcombo_c" : clear ? "clear_c" : "notclear_c";
     if (VoiceOn(main)) SoundManager::Get().Play(kBankEnso, se);
     if (fullCombo) {
-        if (VoiceOn(main)) SoundManager::Get().Play(kBankVoice, perfect ? "dondafullcombo_c" : "fullcombo_c");
+        // 「フルコンボ！」の声は、クリア成功の文字のあと「フルコンボ」の文字が出る瞬間に合わせて鳴らす（UpdateResultVoice）
+        resultVoice_ = VoiceOn(main) ? (perfect ? "dondafullcombo_c" : "fullcombo_c") : nullptr;
+        resultVoiceClip_ = result_.Clip(clip);
+        finishTimer_ = -1.0f;   // 文字が出るのが遅いので、リザルトへ行くのを少し遅らせる
         don_.SetNonLoopAnimation("full_combo", true);
     }
+}
+
+// フルコンボ・ドンダフルコンボの声: 文字の動き（action_result の 125 フレーム目）で「フルコンボ」の文字が出る瞬間に鳴らす
+void EnsoScene::UpdateResultVoice() {
+    if (!resultVoice_) return;
+    constexpr int kTextFrame = 125;
+    const bool shown = !resultVoiceClip_ || resultVoiceClip_->CurrentFrame() >= kTextFrame;
+    if (!shown && finishTimer_ < 1.5f) return;
+    SoundManager::Get().Play(kBankVoice, resultVoice_);
+    resultVoice_ = nullptr;
 }
 
 // ===========================================================================
@@ -1642,6 +1674,7 @@ void EnsoScene::Draw() {
     }
 
     RenderDon();
+    RenderTrainingTopBackground();
 
     bgBottom_.Draw();
     bgFever_.Draw();
@@ -1654,7 +1687,8 @@ void EnsoScene::Draw() {
     daniPlate_.Draw();
     // 上の帯の部品は帯の外にはみ出さないように切る
     BeginScissorMode(0, 0, 1920, int(kLaneTop));
-    donBg_.Draw();
+    if (training_) DrawTrainingTopBackground();
+    else donBg_.Draw();
     donBgObj_.Draw();
     donEnso_.Draw();
     fukidashi_.Draw();
@@ -1789,12 +1823,17 @@ void EnsoScene::RenderDon() {
     donRenderedFrame_ = frame;
     don_.Apply(don3d_);
 
+    // どんちゃんの大きさと足の位置（調整する値）。大きさは 1.0 で以前のまま、足の位置は画面の y（上の帯の下の黒い線は 276）
+    constexpr float kDonScale = 1.2f;
+    constexpr float kDonFeetY = 274.0f;
+    // 差し込み枠は画面に 0.63 倍で置かれ、中心が (248, 138)。1.0 倍のとき足は画面の y = 243 に来る（世界の座標で 0.017）
+    constexpr float kFeetWorldY = 0.017f;
+    constexpr float kPixelsPerUnit = 850.0f;   // 1.0 倍のとき、世界の 1 が画面の何 px か
     Camera3D camera{};
-    camera.target = Vector3{0.0f, 0.14f, 0.0f};
-    camera.position = Vector3{0.0f, 0.2f, 1.7f};
+    camera.target = Vector3{0.0f, kFeetWorldY + (kDonFeetY - 138.0f) / (kPixelsPerUnit * kDonScale), 0.0f};
+    camera.position = Vector3{0.0f, camera.target.y + 0.06f, 1.7f};
     camera.up = Vector3{0.0f, 1.0f, 0.0f};
-    // 差し込み枠は画面に 0.63 倍で置かれ、中心が (248, 138)。後ろの光（直径およそ 250px）に収まる大きさに写す
-    camera.fovy = 0.8f;
+    camera.fovy = 0.8f / kDonScale;
     camera.projection = CAMERA_ORTHOGRAPHIC;
     BeginTextureMode(donTexture_);
     ClearBackground(Color{0, 0, 0, 0});
@@ -2222,24 +2261,96 @@ void EnsoScene::UpdateTraining(float deltaTime) {
 // 特訓モードの画面の部品（本家に部品のムービーがないので、ブログの画面写真にならって描く）
 namespace {
 
-constexpr float kTrainingBarTop = kBottomTop;           // 曲テンポ・小節数・進み具合の帯（高さ 60）
 constexpr float kTrainingPanelTop = kBottomTop + 60.0f; // 成績と太鼓の操作（止めているとき）
-constexpr float kTrainingStatsWidth = 500.0f;
 
-// 太鼓（面・胴のふち）。下は画面の外に切れる
-void DrawTrainingDrum(Vector2 c, float r, bool dots) {
-    DrawCircleV(Vector2{c.x, c.y + 26.0f}, r + 16.0f, Color{196, 108, 44, 255});   // 胴
-    DrawCircleV(c, r + 14.0f, Color{110, 66, 40, 255});                            // ふち
-    DrawCircleV(c, r, Color{242, 230, 204, 255});                                  // 面
-    DrawRing(c, r * 0.64f, r * 0.64f + 4.0f, 0.0f, 360.0f, 72, Color{214, 196, 160, 255});
-    DrawLineEx(Vector2{c.x, c.y - r}, Vector2{c.x, c.y + r}, 3.0f, Color{214, 196, 160, 255});
-    if (dots) {
-        // 2P の太鼓のふちの飾り（青い丸）
-        for (int i = 0; i < 7; ++i) {
-            const float a = (-150.0f + 20.0f * float(i)) * DEG2RAD;
-            DrawCircleV(Vector2{c.x + std::cos(a) * (r - 22.0f), c.y + std::sin(a) * (r - 22.0f)}, 9.0f, Color{120, 200, 214, 255});
+// 特訓モードの素材（Data\x64\lumen\998_tokkun）。初めて描くときに読み込む
+constexpr float kTrainingScale = 1.5f;   // 下の背景（1280x368）と太鼓の絵は 1.5 倍で置く
+constexpr float kTrainingBarLeft = 499.5f;                  // 進み具合の溝（背景の絵の 333〜1246）
+constexpr float kTrainingBarRight = 1869.0f;
+constexpr float kTrainingBarY = kBottomTop + 25.5f;         // 溝の上端（背景の絵の 17）
+constexpr float kTrainingBarHeight = 27.0f;
+constexpr float kTrainingDrumLeft = 853.0f;                 // 太鼓の面の中心の x（1P / 2P）
+constexpr float kTrainingDrumRight = 1553.0f;
+constexpr float kTrainingDrumTop = 568.0f;                  // 太鼓の絵を置く上端
+constexpr float kDrumImageLeft = 250.0f;                    // 絵の中の太鼓の中心（左・右）
+constexpr float kDrumImageRight = 702.0f;
+constexpr float kDrumImageHalf = 473.0f;                    // 絵を左右の太鼓に分ける x
+constexpr float kDrumHitShift = 452.0f;                     // 叩いた光（1P の太鼓の位置）を 2P の太鼓へ動かす幅
+
+struct TrainingTextures {
+    Texture2D down{}, drum{}, drumWait{}, red{}, white{}, gogo{}, measure{}, bigNumber{}, smallNumber{};
+    Texture2D hit[4]{};   // 0: 左のふち 1: 右のふち 2: 左の面 3: 右の面
+};
+
+Texture2D LoadTrainingTexture(const std::string& name) {
+    Texture2D texture = LoadTexture(("Data/x64/lumen/998_tokkun/" + name).c_str());
+    if (texture.id != 0) SetTextureFilter(texture, TEXTURE_FILTER_BILINEAR);
+    return texture;
+}
+
+// 止めているときの太鼓: 「演奏中」の文字と一時停止の絵を消した面にする（楕円の中を面の色で塗り、真ん中の線だけ引き直す）
+Texture2D MakeWaitingDrum() {
+    Image image = LoadImage("Data/x64/lumen/998_tokkun/BigTaiko.png");
+    if (image.data == nullptr) return Texture2D{};
+    ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    Color* pixels = static_cast<Color*>(image.data);
+    const Color face{255, 245, 220, 255};
+    const Color line{238, 226, 198, 255};
+    for (float center : {245.0f, 245.0f + kDrumHitShift}) {
+        for (int y = 90; y <= 220; ++y) {
+            for (int x = int(center) - 120; x <= int(center) + 120; ++x) {
+                const float dx = (float(x) - center) / 115.5f, dy = (float(y) - 155.0f) / 60.5f;
+                if (dx * dx + dy * dy > 1.0f) continue;
+                if (x < 0 || x >= image.width) continue;
+                Color& pixel = pixels[y * image.width + x];
+                pixel = (x == int(center) - 1 || x == int(center)) ? line : face;
+            }
         }
     }
+    Texture2D texture = LoadTextureFromImage(image);
+    UnloadImage(image);
+    if (texture.id != 0) SetTextureFilter(texture, TEXTURE_FILTER_BILINEAR);
+    return texture;
+}
+
+const TrainingTextures& TrainingArt() {
+    static TrainingTextures art;
+    static bool loaded = false;
+    if (!loaded) {
+        loaded = true;
+        art.down = LoadTrainingTexture("Down.png");
+        art.drum = LoadTrainingTexture("BigTaiko.png");
+        art.drumWait = MakeWaitingDrum();
+        art.red = LoadTrainingTexture("ProgressBar_Red.png");
+        art.white = LoadTrainingTexture("ProgressBar_White.png");
+        art.gogo = LoadTrainingTexture("GoGoPoint.png");
+        art.measure = LoadTrainingTexture("Speed_Measure.png");
+        art.bigNumber = LoadTrainingTexture("BigNumber.png");
+        art.smallNumber = LoadTrainingTexture("SmallNumber.png");
+        for (int i = 0; i < 4; ++i) art.hit[i] = LoadTrainingTexture("DrumHit/" + std::to_string(i) + ".png");
+    }
+    return art;
+}
+
+// 絵の数字（0〜9 が横に並んだ素材）を左から並べる。置いた右端の x を返す
+float DrawTrainingNumber(const Texture2D& texture, int value, float x, float centerY, float scale) {
+    if (texture.id == 0) return x;
+    const std::string text = std::to_string(std::max(0, value));
+    const float cell = float(texture.width) / 10.0f;
+    for (char digit : text) {
+        const Rectangle source{cell * float(digit - '0'), 0.0f, cell, float(texture.height)};
+        const Rectangle dest{x, centerY - float(texture.height) * scale * 0.5f, cell * scale, float(texture.height) * scale};
+        DrawTexturePro(texture, source, dest, Vector2{0.0f, 0.0f}, 0.0f, WHITE);
+        x += cell * scale;
+    }
+    return x;
+}
+
+// 素材の一部（札や斜線）を置く
+void DrawTrainingPiece(const Texture2D& texture, Rectangle source, float x, float centerY, float scale) {
+    if (texture.id == 0) return;
+    const Rectangle dest{x, centerY - source.height * scale * 0.5f, source.width * scale, source.height * scale};
+    DrawTexturePro(texture, source, dest, Vector2{0.0f, 0.0f}, 0.0f, WHITE);
 }
 
 // ボタン: 上に名前の札、下に絵
@@ -2249,8 +2360,8 @@ void DrawTrainingButton(Vector2 c, TrainingIcon icon, float flash) {
     GameFont& font = GameFont::Get();
     const bool big = icon == TrainingIcon::Play || icon == TrainingIcon::Menu;
     const float scale = 1.0f + 0.08f * std::min(1.0f, flash / 0.2f);
-    const float w = (big ? 150.0f : 120.0f) * scale;
-    const float h = (big ? 170.0f : 150.0f) * scale;
+    const float w = (big ? 124.0f : 118.0f) * scale;
+    const float h = (big ? 160.0f : 154.0f) * scale;
     const Rectangle box{c.x - w * 0.5f, c.y - h * 0.5f, w, h};
     const Color labelColor = big ? Color{250, 172, 160, 255} : Color{196, 236, 240, 255};
     const Color border = big ? Color{220, 90, 80, 255} : Color{120, 170, 180, 255};
@@ -2291,20 +2402,6 @@ void DrawTrainingButton(Vector2 c, TrainingIcon icon, float flash) {
     }
 }
 
-// 小さな札（「曲テンポ」「小節」）
-void DrawTrainingTag(const char* text, float x, float y, Color bg) {
-    GameFont& font = GameFont::Get();
-    const float w = font.Measure(text, 26.0f).x + 24.0f;
-    DrawRectangleRounded(Rectangle{x, y, w, 36.0f}, 0.6f, 8, bg);
-    font.Draw(text, x + w * 0.5f, y + 4.0f, 26.0f, Color{30, 30, 30, 255}, TextAlign::Center);
-}
-
-// ゴーゴータイムの開始位置の印（火の玉）
-void DrawGogoMark(float x, float y) {
-    DrawTriangle(Vector2{x, y - 16.0f}, Vector2{x - 6.0f, y - 2.0f}, Vector2{x + 6.0f, y - 2.0f}, Color{50, 30, 20, 255});
-    DrawCircleV(Vector2{x, y + 6.0f}, 13.0f, Color{236, 84, 20, 255});
-    DrawCircleV(Vector2{x, y + 9.0f}, 6.0f, Color{255, 196, 70, 255});
-}
 
 // 吹き出し（連打音符の上の打数）
 void DrawCountBubble(float x, float bottom, const char* text, Color bg, Color fg) {
@@ -2351,6 +2448,62 @@ void EnsoScene::DrawTrainingLane(const Player& player) {
     }
 }
 
+namespace {
+
+// 色相を回すシェーダー（色の向きだけを YIQ で回し、明るさは変えない）
+constexpr const char* kTrainingHueFragment = R"(#version 330
+in vec2 fragTexCoord;
+in vec4 fragColor;
+uniform sampler2D texture0;
+uniform vec4 colDiffuse;
+uniform float hue;
+out vec4 finalColor;
+void main() {
+    vec4 c = texture(texture0, fragTexCoord) * fragColor * colDiffuse;
+    float y = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+    float i = dot(c.rgb, vec3(0.596, -0.274, -0.322));
+    float q = dot(c.rgb, vec3(0.211, -0.523, 0.312));
+    float cs = cos(hue), sn = sin(hue);
+    float i2 = i * cs - q * sn;
+    float q2 = i * sn + q * cs;
+    vec3 rgb = vec3(y + 0.956 * i2 + 0.621 * q2, y - 0.272 * i2 - 0.647 * q2, y - 1.106 * i2 + 1.703 * q2);
+    finalColor = vec4(clamp(rgb, 0.0, 1.0), c.a);
+}
+)";
+
+} // namespace
+
+// 特訓モードの上の背景: ふだんの背景（橙）を、下の背景の紫に合わせて色相を回して描く
+//   背景を一度テクスチャに描いてから、色相を回すシェーダーで画面に写す（シェーダーが使えなければ、ふだんのまま描く）
+void EnsoScene::RenderTrainingTopBackground() {
+    if (!training_) return;
+    if (!trainingTopTried_) {
+        trainingTopTried_ = true;
+        trainingTopTexture_ = LoadRenderTexture(1920, int(kLaneTop));
+        trainingHue_ = LoadShaderFromMemory(nullptr, kTrainingHueFragment);
+        trainingHueLocation_ = GetShaderLocation(trainingHue_, "hue");
+    }
+    if (trainingTopTexture_.id == 0) return;
+    BeginTextureMode(trainingTopTexture_);
+    ClearBackground(Color{0, 0, 0, 0});
+    donBg_.Draw();
+    EndTextureMode();
+}
+
+void EnsoScene::DrawTrainingTopBackground() {
+    constexpr float kHue = 1.8f;   // ラジアン（橙 → 紫）
+    RenderTexture2D& target = trainingTopTexture_;
+    Shader& shader = trainingHue_;
+    if (target.id == 0 || shader.id <= 0 || trainingHueLocation_ < 0) {
+        donBg_.Draw();
+        return;
+    }
+    SetShaderValue(shader, trainingHueLocation_, &kHue, SHADER_UNIFORM_FLOAT);
+    BeginShaderMode(shader);
+    DrawTextureRec(target.texture, Rectangle{0.0f, 0.0f, float(target.texture.width), -float(target.texture.height)}, Vector2{0.0f, 0.0f}, WHITE);
+    EndShaderMode();
+}
+
 void EnsoScene::DrawTraining() {
     if (!training_ || players_.empty()) return;
     GameFont& font = GameFont::Get();
@@ -2365,41 +2518,70 @@ void EnsoScene::DrawTraining() {
                   Color{120, 10, 20, 255});
     }
 
+    // 下の背景（演奏を始めても変えない）。左の黒い板と、右の紫の模様、進み具合の溝
+    const TrainingTextures& art = TrainingArt();
+    if (art.down.id != 0) {
+        DrawTexturePro(art.down, Rectangle{0.0f, 0.0f, float(art.down.width), float(art.down.height)},
+                       Rectangle{0.0f, kBottomTop, float(art.down.width) * kTrainingScale, float(art.down.height) * kTrainingScale},
+                       Vector2{0.0f, 0.0f}, 0.0f, WHITE);
+    } else {
+        DrawRectangle(0, int(kBottomTop), 1920, int(1080.0f - kBottomTop), Color{8, 8, 12, 255});
+    }
+
     // 曲テンポ・小節数・進み具合（ゴーゴータイムの開始位置の印つき）
-    DrawRectangle(0, int(kTrainingBarTop), 1920, 60, Color{8, 8, 12, 235});
-    DrawTrainingTag("曲テンポ", 14.0f, kTrainingBarTop + 12.0f, Color{250, 204, 50, 255});
-    font.Draw(TextFormat("%.1f倍", double(trainingTempo_)), 150.0f, kTrainingBarTop + 10.0f, 34.0f, RAYWHITE);
-    DrawTrainingTag("小節", 250.0f, kTrainingBarTop + 12.0f, Color{200, 200, 210, 255});
     const int count = int(trainingMeasures_.size());
     const int current = trainingPaused_ ? trainingMeasure_ : MeasureAt(clock_);
-    font.Draw(TextFormat("%d/ %d", count > 0 ? current + 1 : 0, count), 500.0f, kTrainingBarTop + 10.0f, 34.0f, RAYWHITE,
-              TextAlign::Right);
+    {
+        const float centerY = kBottomTop + 30.0f;
+        const float tag = 1.3f;
+        DrawTrainingPiece(art.measure, Rectangle{0.0f, 0.0f, 64.0f, 50.0f}, 22.0f, centerY, tag);   // 曲テンポ
+        // 曲テンポは倍率（1.0 など）で出す。数字の素材に小数点がないので、点は丸で描く
+        const int tenths = int(std::lround(double(trainingTempo_) * 10.0));
+        float tempoX = DrawTrainingNumber(art.bigNumber, tenths / 10, 112.0f, centerY, 1.1f);
+        const Vector2 dot{tempoX + 4.0f, centerY + 13.0f};
+        DrawCircleV(dot, 5.5f, Color{40, 40, 40, 255});
+        DrawCircleV(dot, 3.5f, RAYWHITE);
+        tempoX = DrawTrainingNumber(art.bigNumber, tenths % 10, tempoX + 10.0f, centerY, 1.1f);
+        font.Draw("倍", tempoX + 2.0f, centerY - 15.0f, 30.0f, RAYWHITE, TextAlign::Left, 3.0f, Color{40, 40, 40, 255});
+        DrawTrainingPiece(art.measure, Rectangle{143.0f, 0.0f, 66.0f, 50.0f}, 212.0f, centerY, tag);   // 小節
+        float x = DrawTrainingNumber(art.bigNumber, count > 0 ? current + 1 : 0, 306.0f, centerY, 1.1f);
+        DrawTrainingPiece(art.measure, Rectangle{266.0f, 0.0f, 32.0f, 50.0f}, x, centerY, 1.0f);
+        x += 32.0f;
+        DrawTrainingNumber(art.smallNumber, count, x, centerY + 2.0f, 1.0f);
+    }
     if (count > 0) {
-        const float left = 530.0f, right = 1890.0f, top = kTrainingBarTop + 14.0f, height = 16.0f;
+        const float left = kTrainingBarLeft, right = kTrainingBarRight, top = kTrainingBarY, height = kTrainingBarHeight;
         const double begin = trainingMeasures_.front();
         const double end = std::max(lastTime_, trainingMeasures_.back()) + 1.0;
         auto toX = [&](double t) { return left + float(std::clamp((t - begin) / (end - begin), 0.0, 1.0)) * (right - left); };
-        DrawRectangleRec(Rectangle{left, top, right - left, height}, Color{70, 70, 76, 255});
+        // 溝は背景の絵にある。演奏した分を赤、レーンに見えている範囲を白で重ねる
+        auto fill = [&](const Texture2D& texture, float from, float to) {
+            if (texture.id == 0 || to <= from) return;
+            const float span = right - left;
+            const Rectangle source{(from - left) / span * float(texture.width), 0.0f, (to - from) / span * float(texture.width),
+                                   float(texture.height)};
+            DrawTexturePro(texture, source, Rectangle{from, top, to - from, height}, Vector2{0.0f, 0.0f}, 0.0f, WHITE);
+        };
         const float now = toX(clock_);
-        DrawRectangleRec(Rectangle{left, top, now - left, height}, Color{226, 36, 36, 255});
-        // レーンに見えている範囲
+        fill(art.red, left, now);
         const size_t m = size_t(std::clamp(MeasureAt(clock_), 0, count - 1));
         const double visible = 240000.0 / std::max(1.0, trainingMeasureBpm_[m]) * double((1920.0f - kJudgeX) / (kSpawnX - kJudgeX)) /
                                std::max(0.1, trainingMeasureScroll_[m]);
-        DrawRectangleRec(Rectangle{now, top, toX(clock_ + visible) - now, height}, Color{214, 214, 214, 255});
-        for (const auto& change : player.gogo) {
-            if (change.second) DrawGogoMark(toX(change.first), top + height + 6.0f);
+        fill(art.white, now, toX(clock_ + visible));
+        if (art.gogo.id != 0) {
+            for (const auto& change : player.gogo) {
+                if (!change.second) continue;
+                DrawTexture(art.gogo, int(toX(change.first)) - art.gogo.width / 2, int(top + height) - 12, WHITE);
+            }
         }
     }
-    if (!trainingPaused_) return;
 
-    // ---- 止めているとき: 直前の演奏の成績 ----
-    DrawRectangleRec(Rectangle{0.0f, kTrainingPanelTop, kTrainingStatsWidth, 1080.0f - kTrainingPanelTop}, Color{8, 8, 12, 255});
+    // ---- 直前の演奏の成績（止めているあいだも、演奏中も出す） ----
     const int judged = player.good + player.ok + player.bad;
     auto percent = [&](int n) { return judged > 0 ? n * 100 / judged : 0; };
     const Color orange{255, 176, 30, 255};
-    font.Draw("たたけた率", 28.0f, kTrainingPanelTop + 34.0f, 48.0f, RAYWHITE, TextAlign::Left, 3.0f);
-    font.Draw(TextFormat("%d%%", percent(player.good + player.ok)), 476.0f, kTrainingPanelTop + 28.0f, 56.0f, orange,
+    font.Draw("たたけた率", 28.0f, kTrainingPanelTop + 58.0f, 48.0f, RAYWHITE, TextAlign::Left, 3.0f);
+    font.Draw(TextFormat("%d%%", percent(player.good + player.ok)), 476.0f, kTrainingPanelTop + 52.0f, 56.0f, orange,
               TextAlign::Right, 3.0f);
     struct Row {
         const char* name;
@@ -2408,36 +2590,68 @@ void EnsoScene::DrawTraining() {
     };
     const Row rows[] = {{"良", player.good, Color{255, 150, 40, 255}}, {"可", player.ok, RAYWHITE}, {"不可", player.bad, Color{80, 150, 255, 255}}};
     for (int i = 0; i < 3; ++i) {
-        const float y = kTrainingPanelTop + 116.0f + 62.0f * float(i);
+        const float y = kTrainingPanelTop + 144.0f + 57.0f * float(i);
         DrawRectangleRounded(Rectangle{20.0f, y, 460.0f, 52.0f}, 0.5f, 8, Color{44, 44, 54, 255});
         font.Draw(rows[i].name, 96.0f, y + 6.0f, 38.0f, rows[i].color, TextAlign::Center, 3.0f);
         font.Draw(TextFormat("%d", rows[i].value), 300.0f, y + 6.0f, 38.0f, RAYWHITE, TextAlign::Right, 3.0f);
         font.Draw(TextFormat("%d%%", percent(rows[i].value)), 466.0f, y + 6.0f, 38.0f, orange, TextAlign::Right, 3.0f);
     }
-    const float rendaY = kTrainingPanelTop + 330.0f;
+    const float rendaY = kTrainingPanelTop + 340.0f;
     DrawRectangleRounded(Rectangle{20.0f, rendaY, 300.0f, 52.0f}, 0.7f, 8, Color{120, 110, 24, 255});
     font.Draw("連打", 76.0f, rendaY + 6.0f, 38.0f, Color{255, 230, 60, 255}, TextAlign::Center, 3.0f);
     font.Draw(TextFormat("%d", player.rolls), 270.0f, rendaY + 6.0f, 38.0f, RAYWHITE, TextAlign::Right, 3.0f);
     font.Draw(TextFormat("%s：特訓モードをやめる", TaikoInput::KeyName(TaikoInput::BoundKey(TaikoInput::Action::Training, 0)).c_str()),
               28.0f, 1080.0f - 50.0f, 26.0f, Color{170, 170, 180, 255});
 
-    // ---- 止めているとき: 太鼓の操作（1P: 早戻し・再生・早送り、2P: テンポ・メニュー） ----
-    const Rectangle area{kTrainingStatsWidth, kTrainingPanelTop, 1920.0f - kTrainingStatsWidth, 1080.0f - kTrainingPanelTop};
-    BeginScissorMode(int(area.x), int(area.y), int(area.width), int(area.height));
-    DrawRectangleRec(area, Color{66, 42, 118, 255});
-    for (float x = area.x - area.height; x < area.x + area.width; x += 56.0f) {
-        DrawLineEx(Vector2{x, area.y + area.height}, Vector2{x + area.height, area.y}, 10.0f, Color{80, 54, 138, 255});
+    // ---- 太鼓（1P / 2P）。演奏中は「演奏中」と一時停止の絵、止めているときは操作のボタンを出す ----
+    const float drumLeftX = kTrainingDrumLeft - kDrumImageLeft * kTrainingScale;     // 絵の左端（1P の太鼓）
+    const float drumRightX = kTrainingDrumRight - kDrumImageRight * kTrainingScale;  // 絵の左端（2P の太鼓）
+    const Texture2D& drum = trainingPaused_ && art.drumWait.id != 0 ? art.drumWait : art.drum;
+    if (drum.id != 0) {
+        const float h = float(drum.height);
+        DrawTexturePro(drum, Rectangle{0.0f, 0.0f, kDrumImageHalf, h},
+                       Rectangle{drumLeftX, kTrainingDrumTop, kDrumImageHalf * kTrainingScale, h * kTrainingScale}, Vector2{0.0f, 0.0f}, 0.0f,
+                       WHITE);
+        DrawTexturePro(drum, Rectangle{kDrumImageHalf, 0.0f, float(drum.width) - kDrumImageHalf, h},
+                       Rectangle{drumRightX + kDrumImageHalf * kTrainingScale, kTrainingDrumTop,
+                                 (float(drum.width) - kDrumImageHalf) * kTrainingScale, h * kTrainingScale},
+                       Vector2{0.0f, 0.0f}, 0.0f, WHITE);
+        // 絵は胴の途中で切れているので、いちばん下の数行を画面の下まで引き伸ばして続ける
+        const float bottom = kTrainingDrumTop + h * kTrainingScale;
+        if (bottom < 1080.0f) {
+            constexpr float kStrip = 3.0f;
+            DrawTexturePro(drum, Rectangle{0.0f, h - kStrip - 1.0f, kDrumImageHalf, kStrip},
+                           Rectangle{drumLeftX, bottom - 1.0f, kDrumImageHalf * kTrainingScale, 1080.0f - bottom + 2.0f}, Vector2{0.0f, 0.0f},
+                           0.0f, WHITE);
+            DrawTexturePro(drum, Rectangle{kDrumImageHalf, h - kStrip - 1.0f, float(drum.width) - kDrumImageHalf, kStrip},
+                           Rectangle{drumRightX + kDrumImageHalf * kTrainingScale, bottom - 1.0f,
+                                     (float(drum.width) - kDrumImageHalf) * kTrainingScale, 1080.0f - bottom + 2.0f},
+                           Vector2{0.0f, 0.0f}, 0.0f, WHITE);
+        }
     }
-    const Vector2 left{845.0f, 920.0f}, right{1550.0f, 920.0f};
-    DrawTrainingDrum(left, 240.0f, false);
-    DrawTrainingDrum(right, 240.0f, true);
-    DrawTrainingButton(Vector2{612.0f, 810.0f}, TrainingIcon::Rewind, trainingButtonFlash_[0]);
-    DrawTrainingButton(Vector2{1078.0f, 810.0f}, TrainingIcon::Forward, trainingButtonFlash_[2]);
-    DrawTrainingButton(left, TrainingIcon::Play, trainingButtonFlash_[1]);
-    DrawTrainingButton(Vector2{1316.0f, 790.0f}, TrainingIcon::Slow, trainingButtonFlash_[3]);
-    DrawTrainingButton(Vector2{1784.0f, 790.0f}, TrainingIcon::Fast, trainingButtonFlash_[5]);
-    DrawTrainingButton(right, TrainingIcon::Menu, trainingButtonFlash_[4]);
-    EndScissorMode();
+    // 叩いた面・ふちが光る（左のふち・右のふち・左の面・右の面の順の素材）
+    static constexpr int kHitSprite[4] = {0, 2, 3, 1};   // TaikoInput::Pad の順（左ふち・左面・右面・右ふち）→ 素材の番号
+    for (int p = 0; p < 2; ++p) {
+        const float x = p == 0 ? drumLeftX : drumLeftX + kDrumHitShift * kTrainingScale;
+        for (int pad = 0; pad < 4; ++pad) {
+            const float flash = trainingHitFlash_[p][pad];
+            const Texture2D& hit = art.hit[kHitSprite[pad]];
+            if (flash <= 0.0f || hit.id == 0) continue;
+            DrawTexturePro(hit, Rectangle{0.0f, 0.0f, float(hit.width), float(hit.height)},
+                           Rectangle{x, kTrainingDrumTop, float(hit.width) * kTrainingScale, float(hit.height) * kTrainingScale},
+                           Vector2{0.0f, 0.0f}, 0.0f, Color{255, 255, 255, (unsigned char)(255.0f * std::min(1.0f, flash / 0.08f))});
+        }
+    }
+    if (!trainingPaused_) return;
+
+    // 止めているとき: 1P の太鼓は 早戻し・再生・早送り、2P の太鼓は テンポ・メニュー
+    const float buttonY = 765.0f, buttonBottomY = 884.0f;
+    DrawTrainingButton(Vector2{kTrainingDrumLeft - 237.0f, buttonY}, TrainingIcon::Rewind, trainingButtonFlash_[0]);
+    DrawTrainingButton(Vector2{kTrainingDrumLeft + 235.0f, buttonY}, TrainingIcon::Forward, trainingButtonFlash_[2]);
+    DrawTrainingButton(Vector2{kTrainingDrumLeft, buttonBottomY}, TrainingIcon::Play, trainingButtonFlash_[1]);
+    DrawTrainingButton(Vector2{kTrainingDrumRight - 237.0f, buttonY}, TrainingIcon::Slow, trainingButtonFlash_[3]);
+    DrawTrainingButton(Vector2{kTrainingDrumRight + 237.0f, buttonY}, TrainingIcon::Fast, trainingButtonFlash_[5]);
+    DrawTrainingButton(Vector2{kTrainingDrumRight, buttonBottomY}, TrainingIcon::Menu, trainingButtonFlash_[4]);
 }
 
 void EnsoScene::TogglePause() {

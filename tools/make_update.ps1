@@ -1,5 +1,5 @@
 ﻿# アップデートの配布物を作る（ランチャーの「アップデート」で配る）
-#   使い方（ゲームのフォルダで）: powershell -ExecutionPolicy Bypass -File tools\make_update.ps1 [-AppDir C:\GuminTaiko] [-Out update] [-Version 2026.11.02] [-Publish]
+#   使い方（ゲームのフォルダで）: powershell -ExecutionPolicy Bypass -File tools\make_update.ps1 [-AppDir Z:\GuminTaikoApp] [-Out update] [-Version 2026.11.02] [-Publish]
 #   GitHub で配るとき: 既定の出力 update\ は、このリポジトリの中（raw.githubusercontent.com/<ユーザー>/<リポジトリ>/<ブランチ>/update で読める）。
 #     -Publish をつけると、update\ をコミットして origin に push する（push は外に出る操作なので、つけたときだけ行う）。
 #     中身が同じファイルは、Git が同じ物として保存するので、Data\x64 と重ねて置いても容量は増えない。1 ファイル 100MB まで
@@ -10,7 +10,7 @@
 #   Backup\launcher.ini の update_url= に書く。ランチャーが起動すると、違うファイルだけを取ってきて入れ替える。
 #   2 回目からは、変わったファイルだけが <Out>\files に足される（前の版の残りは消える）
 param(
-    [string]$AppDir = "C:\GuminTaiko",
+    [string]$AppDir = "Z:\GuminTaikoApp",
     [string]$Out = "update",
     [string]$Version = (Get-Date -Format "yyyy.MM.dd.HHmm"),
     [switch]$Publish

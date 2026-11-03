@@ -1,12 +1,12 @@
 ﻿# GuminTaiko を自分用のアプリとして配置する（保護付きのビルド・証明書・改変の検知・ショートカット）
-#   使い方（ゲームのフォルダで）: powershell -ExecutionPolicy Bypass -File tools\package.ps1 [-AppDir C:\GuminTaiko] [-Licensee 名前]
+#   使い方（ゲームのフォルダで）: powershell -ExecutionPolicy Bypass -File tools\package.ps1 [-AppDir Z:\GuminTaikoApp] [-Licensee 名前]
 #   ・プログラムと素材（実行ファイル・Data\x64・third_party\vgmstream）は署名して読み取り専用にする。書き換えると起動しない
 #   ・Songs と Data\x64\fumen（曲の追加。fumen の TJA の音源は Data\x64\sound の ogg・mp3）、
 #     Data\x64\datatable\songs_index（曲の並び）、Backup（プレイヤーデータ・設定）、
 #     Data\cache（音の変換結果）は自由に変えてよい
 #   ・もう一度実行すると更新する（Songs は足すだけ、Backup は上書きしない）
 param(
-    [string]$AppDir = "C:\GuminTaiko",
+    [string]$AppDir = "Z:\GuminTaikoApp",
     [string]$Licensee = $env:USERNAME,
     [string]$UpdateUrl = "github:sora1214/GuminTaiko"   # ランチャーのアップデートの更新元（github:ユーザー/リポジトリ[@ブランチ]・URL・フォルダ）。update_url.txt に書く
 )

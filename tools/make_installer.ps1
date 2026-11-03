@@ -1,12 +1,12 @@
 ﻿# GuminTaiko のインストーラー（GuminTaiko-Setup.exe）を作る
-#   使い方（ゲームのフォルダで）: powershell -ExecutionPolicy Bypass -File tools\make_installer.ps1 [-AppDir C:\GuminTaiko] [-Version 1.0] [-Out dist]
+#   使い方（ゲームのフォルダで）: powershell -ExecutionPolicy Bypass -File tools\make_installer.ps1 [-AppDir Z:\GuminTaikoApp] [-Version 1.0] [-Out dist]
 #   先に tools\package.ps1 で配置（署名・manifest.sig・ランチャーの作成）を済ませておく。
 #   ・配布する中身: プログラム（exe）・Data\x64（本家の素材。曲の TJA と音源・曲の並びは除く）・third_party・manifest.sig
 #   ・入れないもの: 曲（Songs・Data\x64\fumen・Data\x64\sound の ogg/mp3/wav）・Backup（プレイヤーデータ）・Data\cache・
 #     license.cert（この PC 用。もらった人は、ランチャーで PC の ID を送って証明書をもらう）・秘密鍵（keys）
 #   ・インストール先は C:\Users\名前\AppData\Local\Programs\GuminTaiko（書き込める場所）
 param(
-    [string]$AppDir = "C:\GuminTaiko",
+    [string]$AppDir = "Z:\GuminTaikoApp",
     [string]$Version = (Get-Date -Format "yyyy.MM.dd"),
     [string]$Out = "dist",
     [switch]$Web   # ウェブ版: ランチャーだけ入れて、残りはランチャーが GitHub から取ってくる（小さい。zip は要らない）

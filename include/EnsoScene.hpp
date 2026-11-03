@@ -198,6 +198,12 @@ private:
     void ResumeTraining();
     void SetTrainingTempo(float tempo);
     void DrawTraining();
+    void RenderTrainingTopBackground();            // 特訓モードの上の背景を一度テクスチャに描く
+    void DrawTrainingTopBackground();              // その背景を、色相を回して（紫にして）描く
+    RenderTexture2D trainingTopTexture_{};
+    Shader trainingHue_{};
+    int trainingHueLocation_ = -1;
+    bool trainingTopTried_ = false;
     void DrawTrainingLane(const Player& player);   // 譜面の上の小節の番号・連打数の吹き出し（止めているとき）
     int MeasureAt(double time) const;   // time を含む小節（trainingMeasures_ の番号）
     double Lag() const;                 // 曲の位置と譜面の時刻の差（ms。テンポを変えると聞こえるまでの遅れも伸び縮みする）
@@ -239,6 +245,7 @@ private:
     enum class DaniPhase { Play, Closing, Ending } daniPhase_ = DaniPhase::Play;
     float daniTimer_ = 0.0f;
     bool daniSwitched_ = false;       // 次の曲の画面に切り替えた
+    int warmupFrames_ = 0;            // 画面を作った直後のフレーム数（長くなった最初の1フレームで襖や時刻が飛ばないように）
     bool daniOpened_ = false;         // 始めの襖を開けた
     void ShowDaniSongInfo(int songIndex, bool play);   // 右上の曲名と「N曲目」を、その曲のものにする（襖が開いたとき）
     void UpdateDaniSongInfo(float dt);                 // ジャンルの板と「N曲目 / N曲」を、同じ場所でフェードして入れ替える
@@ -254,6 +261,9 @@ private:
     // ---- 演奏オプション ----
     void ApplyNoteOptions(Player& player);          // あべこべ・ランダム（音符の色を入れ替える）
     bool VoiceOn(const Player& player) const { return player.options.voice; }
+    void UpdateResultVoice();                       // フルコンボの声を、文字が出る瞬間に鳴らす
+    const char* resultVoice_ = nullptr;             // まだ鳴らしていない声（なければ nullptr）
+    Lumen::MovieClip* resultVoiceClip_ = nullptr;   // その声に合わせる文字の動き
     // 演奏スキップ: つかっていない太鼓のフチを左右交互に 10 回叩くと演奏を終える（1人で「する」にしたときだけ）
     void UpdateEnsoSkip(float deltaTime);
     Part skipPart_;
@@ -289,6 +299,7 @@ private:
     double trainingRunEnd_ = -1.0;
     std::vector<double> trainingBeats_;    // 演奏を始める前の1小節の拍（カウントの音を鳴らす時刻）
     int trainingMoveSound_ = 0;            // 早送り・早戻しの音を鳴らしている（1: 早送り -1: 早戻し）
+    float trainingHitFlash_[2][4] = {};    // 叩いた面・ふちを光らせる残り時間（1P・2P × TaikoInput::Pad の順）
     float trainingButtonFlash_[6] = {};    // 押したボタンを光らせる残り時間（早戻し・再生・早送り・遅・メニュー・速）
     bool trainingSongReady_ = false;       // 特訓モードで始めた画面: 曲を読み込んで止めてある
 

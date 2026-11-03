@@ -31,7 +31,7 @@ namespace {
 constexpr int kWidth = 1000;
 constexpr int kHeight = 620;
 constexpr const char* kKeyPath = "keys/gumin_private.key";
-constexpr const char* kAppFolder = "C:\\GuminTaiko";
+constexpr const char* kAppFolder = "Z:\\GuminTaikoApp";
 
 const Color kBack{250, 236, 210, 255};
 const Color kInk{52, 26, 18, 255};
@@ -268,7 +268,7 @@ struct App {
             FitText(message, float(kWidth) * 0.5f, 560.0f, float(kWidth) - 48.0f, 22.0f, 15.0f, messageOk ? kGreen : kRed,
                     TextAlign::Center, Elide::Left);
         }
-        FitText("「アプリ」: この PC の C:\\GuminTaiko に書く  「この PC」: この PC の ID を入れる", 24.0f, float(kHeight) - 22.0f,
+        FitText("「アプリ」: この PC の Z:\\GuminTaikoApp に書く  「この PC」: この PC の ID を入れる", 24.0f, float(kHeight) - 22.0f,
                 float(kWidth) - 48.0f, 18.0f, 14.0f, kSub);
     }
 };

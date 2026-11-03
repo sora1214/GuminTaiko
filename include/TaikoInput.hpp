@@ -24,11 +24,14 @@ enum class Action {
 };
 constexpr int kActionCount = int(Action::Count);
 constexpr int kKeySlots = 2;   // 1つの操作に割り当てられるキーの数
+constexpr int kProfileCount = 5;   // 保存できるキー設定の数
 
-// 割り当て（起動時に LoadBindings で読み込む）
+// 割り当て（起動時に LoadBindings で読み込む）。キー設定は kProfileCount 個まで保存でき、使うものを切り替えられる
 void LoadBindings();
 void SaveBindings();
-void ResetBindings();                          // 初期値に戻す（保存もする）
+void ResetBindings();                          // 使っているキー設定を初期値に戻す（保存もする）
+int ActiveProfile();                           // 使っているキー設定（0〜kProfileCount-1）
+void SetActiveProfile(int profile);            // キー設定を切り替える（範囲の外は回す。保存もする）
 int BoundKey(Action action, int slot);         // 割り当てたキー（なければ 0）
 int DefaultKey(Action action, int slot);       // 初期値のキー（なければ 0）
 // キーを割り当てる（0 で外す）。同じキーをほかの操作に割り当てていたら、そちらは外す

@@ -17,8 +17,8 @@ constexpr int kNeiroSlotBase = 4;          // 音色の試し打ちを鳴らす�
 // ---- 文字の上下の位置（ピクセル。小さくすると上へ、大きくすると下へ。0 が元のデータの位置）----
 //   左右の位置は、元のデータの文字の枠の座標で決まっていて、ここでは変えられない
 constexpr float kTitleOffsetY = 0.0f;       // 「演奏オプション」（板の上の題）
-constexpr float kItemNameOffsetY = 0.0f;    // 項目の名前（はやさ・ドロン・あべこべ…）
-constexpr float kItemValueOffsetY = 0.0f;   // 項目の値（1.0・しない・なし・太鼓…）
+constexpr float kItemNameOffsetY = -5.0f;    // 項目の名前（はやさ・ドロン・あべこべ…）
+constexpr float kItemValueOffsetY = -5.0f;   // 項目の値（1.0・しない・なし・太鼓…）
 constexpr float kPositionTextOffsetY = 0.0f;   // 音符位置調整の窓の文字
 
 const char* const kItemNames[PlayOptionBoard::kItemCount] = {"option_speed", "option_doron", "option_abekobe", "option_random",

@@ -783,7 +783,8 @@ namespace {
 constexpr int kKcBindings = TaikoInput::kActionCount * TaikoInput::kKeySlots;   // 割り当ての数
 constexpr int kKcDefault = kKcBindings;                                         // DEFAULT
 constexpr int kKcExit = kKcBindings + 1;                                        // EXIT
-constexpr int kKcItems = kKcBindings + 2;
+constexpr int kKcProfile = kKcBindings + 2;                                     // PROFILE（画面では一番上。選択の順では EXIT の次）
+constexpr int kKcItems = kKcBindings + 3;
 constexpr int kKcLabelCol = 14;
 constexpr int kKcSlotCols[TaikoInput::kKeySlots] = {44, 64};
 
@@ -847,9 +848,13 @@ void TestModeScene::UpdateKeyConfig() {
         if (kcCursor_ < kKcBindings) {
             kcWaiting_ = true;
             kcMessage_.clear();
+        } else if (kcCursor_ == kKcProfile) {
+            // 次のキー設定へ切り替える（キーの割り当ては設定ごとに保存される）
+            TaikoInput::SetActiveProfile(TaikoInput::ActiveProfile() + 1);
+            kcMessage_ = Wide("SWITCHED TO PROFILE " + std::to_string(TaikoInput::ActiveProfile() + 1));
         } else if (kcCursor_ == kKcDefault) {
             TaikoInput::ResetBindings();
-            kcMessage_ = Wide("ALL KEYS WERE RESET TO DEFAULT");
+            kcMessage_ = Wide("KEYS OF THIS PROFILE WERE RESET TO DEFAULT");
         } else {
             CloseKeyConfig();
         }
@@ -863,6 +868,8 @@ void TestModeScene::DrawKeyConfig() const {
         DrawMarkup(text, std::max(0, (def_->width - TextCells(text)) / 2), row, color);
     };
     center("ＫＥＹ ＣＯＮＦＩＧ", 1, WHITE);
+    DrawMarkup(Wide("PROFILE " + std::to_string(TaikoInput::ActiveProfile() + 1) + "/" + std::to_string(TaikoInput::kProfileCount)),
+               kKcLabelCol, 3, kcCursor_ == kKcProfile ? RED : WHITE);
     DrawMarkup("ＫＥＹ１", kKcSlotCols[0], 3, WHITE);
     DrawMarkup("ＫＥＹ２", kKcSlotCols[1], 3, WHITE);
 
