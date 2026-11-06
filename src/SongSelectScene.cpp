@@ -1477,16 +1477,7 @@ void SongSelectScene::SetOptionIcon(int p) {
     if (!icon) return;
     Goto(icon, "menu");
     for (int i = 0; i < 5; ++i) Goto(Sub(icon, "option/option" + std::to_string(i)), "none");
-    const PlayOptions& options = PlayDataManager::Get().Player(p).options;
-    static const char* const kSpeedLabels[PlayOptions::kSpeedCount] = {
-        "", "speedx1.1", "speedx1.2", "speedx1.3", "speedx1.4", "speedx1.5", "speedx1.6", "speedx1.7",
-        "speedx1.8", "speedx1.9", "speedx2", "speedx2.5", "speedx3", "speedx3.5", "speedx4"};
-    std::vector<std::string> labels;
-    if (options.speed > 0) labels.push_back(kSpeedLabels[std::clamp(options.speed, 0, PlayOptions::kSpeedCount - 1)]);
-    if (options.doron) labels.push_back("doron");
-    if (options.abekobe) labels.push_back("abekobe");
-    if (options.random > 0) labels.push_back(options.random == 1 ? "kimagure" : "detarame");
-    if (options.notePosition != 0) labels.push_back("note_pos");
+    const std::vector<std::string> labels = CommonParts::OptionIconLabels(PlayDataManager::Get().Player(p).options);
     optionCount_[p] = int(labels.size());
     for (size_t i = 0; i < labels.size(); ++i) {
         const int slot = p == 1 ? 4 - int(i) : int(i);

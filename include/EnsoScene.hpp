@@ -111,6 +111,8 @@ private:
         int activeRoll = -1;       // 叩いている最中の連打・風船
 
         Part lane, laneHit, laneLeft, taiko, scorePart, comboPart, course2, gauge, hitEffect, plate, renda;
+        Part optionIcon;           // 演奏オプションのアイコン（選曲画面と同じもの）
+        int optionCount = 0;       // 並んでいるアイコンの数（オートの札はこの次に出す）
         int shownScore = -1, shownCombo = -1, shownGauge = -1;
         bool gaugeFull = false;   // 魂ゲージが満タン（虹色と魂の炎を出している）
 
@@ -271,6 +273,7 @@ private:
     void UpdateDaniSongInfo(float dt);                 // ジャンルの板と「N曲目 / N曲」を、同じ場所でフェードして入れ替える
     void SetSongNumber(int number, int total);
     void DrawAutoBadge(const Player& player) const;
+    static float BadgeCenterY(float laneY, bool lower);
     bool daniInfoRun_ = false;        // 入れ替えの動きを始めた
     float daniInfoTime_ = 0.0f;
     bool daniInfoNumberPhase_ = false;   // song_info を「N曲目」が見える時間で止めている

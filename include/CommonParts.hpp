@@ -1,5 +1,9 @@
 #pragma once
+#include <string>
+#include <vector>
+
 #include "LumenPlayer.hpp"
+#include "PlayData.hpp"
 
 // 画面をまたいで使う Lumen の部品（lua: common/NamePlate, common/Timer）
 namespace CommonParts {
@@ -14,6 +18,9 @@ bool ToggleAutoPlay();
 // オートプレイ中のしるし（左端 left、高さの中心 centerY。オートでなければ何も描かない）。
 // scale 1.0 が演奏オプションのアイコンと同じ大きさ（約 38px）
 void DrawAutoBadge(float left, float centerY, float scale = 1.0f);
+// 演奏オプションのアイコン（lumen/000_default/common/option の option0〜4）に出すラベル。
+// はやさ・ドロン・あべこべ・ランダム・音符位置調整のうち、初期値でないものを順に（lua: SongSelectOptionMain:SetOptionIcon）
+std::vector<std::string> OptionIconLabels(const GuminTaiko::PlayOptions& options);
 
 // ネームプレートの main の文字（称号・名前）を本家の見た目にする
 //   字形は選曲のジャンルの看板と同じ。称号: 帯の上下中央に黒い文字  名前: 白い帯の上下中央に、黒い縁取りの白い文字

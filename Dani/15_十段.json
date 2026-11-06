@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "level": 15,
+  "name": "十段",
+  "songs": [
+    {
+      "tja": "メヌエット.tja",
+      "course": "oni",
+      "hidden": false
+    },
+    {
+      "tja": "鈍響ライクリフド.tja",
+      "course": "oni",
+      "hidden": false
+    },
+    {
+      "tja": "活声ライクリフド.tja",
+      "course": "oni",
+      "hidden": false
+    }
+  ],
+  "gauge": {
+    "red": 100,
+    "gold": 100
+  },
+  "exams": [
+    {
+      "type": "ok",
+      "range": "song",
+      "red": [
+        18,
+        25,
+        30
+      ],
+      "gold": [
+        13,
+        20,
+        23
+      ]
+    },
+    {
+      "type": "bad",
+      "range": "total",
+      "red": [
+        8
+      ],
+      "gold": [
+        4
+      ]
+    },
+    {
+      "type": "roll",
+      "range": "song",
+      "red": [
+        7,
+        46,
+        80
+      ],
+      "gold": [
+        8,
+        51,
+        93
+      ]
+    }
+  ]
+}

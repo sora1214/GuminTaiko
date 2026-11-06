@@ -39,6 +39,7 @@ namespace {
 //   --scene attract / entry / test  アトラクト（タイトルから）・エントリー画面・テストモードから始める
 //   --scene songselect          1P をコインで参加させた状態で曲選択画面から始める（--players 2 で2人）
 //   --scene enso --song ID --course N   演奏画面から始める（N: 0 かんたん〜4 おに裏。--auto 1 で自動演奏）
+//                              --options "speed=N,doron,abekobe,random=N,notepos" で演奏オプションを付ける
 //   --scene result [--score 点]  確認用の結果でリザルト画面から始める（--stage N で N 曲目として扱う）
 //   --input "秒:P:ボタン,…"    指定した時刻に叩いたことにする（P: 1/2、ボタン: kl/dl/dr/kr = 左ふち/左面/右面/右ふち）
 //                              筐体のボタンは P を 0 にして test / service / coin / up / down / enter / card
@@ -121,6 +122,7 @@ int main(int argc, char** argv) {
     bool windowed = false;  // --windowed 1: 全画面にせずウィンドウで開く（確認用）
     std::string songId;
     int course = 3;
+    std::string testOptions;    // --options "speed=N,doron,abekobe,random=N,notepos": 確認用の演奏オプション（--scene enso）
     float quitAfter = -1.0f;
     int songCount = 1;          // --stage N: N 曲目から始める
     int testScore = 912340;     // --scene result のスコア
@@ -140,6 +142,7 @@ int main(int argc, char** argv) {
         else if (key == "--players") players = std::atoi(value.c_str());
         else if (key == "--song") songId = value;
         else if (key == "--course") course = std::atoi(value.c_str());
+        else if (key == "--options") testOptions = value;
         else if (key == "--auto") EnsoScene::autoPlay = EnsoScene::autoUsed = std::atoi(value.c_str()) != 0;
         else if (key == "--fps") logFps = EnsoScene::logClock = std::atoi(value.c_str()) != 0;
         else if (key == "--target-fps") targetFps = std::max(0, std::atoi(value.c_str()));
@@ -290,6 +293,17 @@ int main(int argc, char** argv) {
                 }
             }
             for (int p = 0; p < 2; ++p) pd.SetSelectedCourse(p, course);
+            for (const std::string& item : Split(testOptions, ',')) {
+                for (int p = 0; p < 2; ++p) {
+                    GuminTaiko::PlayOptions& options = pd.Player(p).options;
+                    const int number = item.find('=') != std::string::npos ? std::atoi(item.substr(item.find('=') + 1).c_str()) : 1;
+                    if (item.rfind("speed", 0) == 0) options.speed = number;
+                    else if (item == "doron") options.doron = true;
+                    else if (item == "abekobe") options.abekobe = true;
+                    else if (item.rfind("random", 0) == 0) options.random = number;
+                    else if (item == "notepos") options.notePosition = 1;
+                }
+            }
             if (startScene == "loading") SceneManager::GetInstance().ChangeScene(std::make_unique<LoadingScene>());
             else SceneManager::GetInstance().ChangeScene(std::make_unique<EnsoScene>());
         } else if (startScene == "dani") {

@@ -686,16 +686,31 @@ bool EnsoScene::SetupPlayer(Player& player, int index, int players) {
     const bool lower = players >= 2 && index == 1;
     player.plate.Load("lumen/000_default/common/name_plate", {kPlateX, player.laneY + (lower ? kPlateY2P : kPlateY1P)});
     CommonParts::SetNamePlate(player.plate.Root(), index);
+
+    // 演奏オプションのアイコン（選曲画面と同じ素材の横並び「menu」。アイコンは 40px で 43px おき、位置はアイコンの中心）
+    const std::vector<std::string> labels = CommonParts::OptionIconLabels(player.options);
+    player.optionCount = int(labels.size());
+    if (!labels.empty() &&
+        player.optionIcon.Load("lumen/000_default/common/option", {kBadgeLeft + 20.0f, BadgeCenterY(player.laneY, lower)})) {
+        Goto(player.optionIcon.Root(), "menu");
+        for (int i = 0; i < 5; ++i) {
+            Goto(player.optionIcon.Clip("option/option" + std::to_string(i)), i < int(labels.size()) ? labels[size_t(i)] : "none");
+        }
+    }
     return true;
 }
 
-// オートプレイ中のしるし。選曲画面で演奏オプションのアイコンが並ぶところ（ネームプレートの下、左端から）に、同じ大きさで出す
+// 演奏オプションのアイコンとオートの札を並べる高さ（中心）。
+// 本家の演奏画面の演奏オプションは、難易度の丸い絵（おになど）のすぐ右、同じ高さに並ぶ。
+// 難易度の絵はネームプレートの上（2P はスコアが下に来るので下）にある
+float EnsoScene::BadgeCenterY(float laneY, bool lower) {
+    return laneY + (lower ? 40.0f + kBadgeCourseDy2P : 217.0f + kBadgeCourseDy1P) + kBadgeOffsetY;
+}
+
+// オートプレイ中のしるし。演奏オプションのアイコンの次（選曲画面と同じ並び）に、同じ大きさで出す
 void EnsoScene::DrawAutoBadge(const Player& player) const {
     const bool lower = players_.size() >= 2 && player.index == 1;
-    // 本家の演奏画面の演奏オプションは、難易度の丸い絵（おになど）のすぐ右、同じ高さに並ぶ。
-    // 難易度の絵はネームプレートの上（2P はスコアが下に来るので下）にある
-    const float centerY = player.laneY + (lower ? 40.0f + kBadgeCourseDy2P : 217.0f + kBadgeCourseDy1P) + kBadgeOffsetY;
-    CommonParts::DrawAutoBadge(kBadgeLeft, centerY, 1.0f);
+    CommonParts::DrawAutoBadge(kBadgeLeft + 43.0f * float(player.optionCount), BadgeCenterY(player.laneY, lower), 1.0f);
 }
 
 // 音符の絵の外ぶち（黒）と縁の白を、本家（AC）の見た目に近づける。AC では外ぶち・目・口が真っ黒ではなく少し浮いた暗い色（約 24,28,26）で、
@@ -1095,7 +1110,7 @@ void EnsoScene::Update(float deltaTime) {
     for (Cycle* cycle : {&donBgCycle_, &bgFeverCycle_, &feverEffectCycle_}) UpdateCycle(*cycle);
     for (Player& player : players_) {
         for (Part* part : {&player.lane, &player.laneHit, &player.laneLeft, &player.taiko, &player.scorePart, &player.comboPart,
-                           &player.course2, &player.gauge, &player.hitEffect, &player.plate, &player.renda}) {
+                           &player.course2, &player.gauge, &player.hitEffect, &player.plate, &player.renda, &player.optionIcon}) {
             part->Update(deltaTime);
         }
         for (size_t i = 1; i < player.addScores.size(); ++i) player.addScores[i].Update(deltaTime);
@@ -1923,6 +1938,7 @@ void EnsoScene::Draw() {
         }
         player.comboPart.Draw();
         player.plate.Draw();
+        player.optionIcon.Draw();
         if (autoPlay) DrawAutoBadge(player);
         player.renda.Draw();
     }

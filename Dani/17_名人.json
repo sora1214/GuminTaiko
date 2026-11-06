@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "level": 17,
+  "name": "名人",
+  "songs": [
+    {
+      "tja": "ウルトラマンX.tja",
+      "course": "ura",
+      "hidden": true
+    },
+    {
+      "tja": "Taiko Drum Monster.tja",
+      "course": "oni",
+      "hidden": false
+    },
+    {
+      "tja": "HYPERNOVA.tja",
+      "course": "ura",
+      "hidden": true
+    }
+  ],
+  "gauge": {
+    "red": 100,
+    "gold": 100
+  },
+  "exams": [
+    {
+      "type": "ok",
+      "range": "total",
+      "red": [
+        30
+      ],
+      "gold": [
+        20
+      ]
+    },
+    {
+      "type": "bad",
+      "range": "total",
+      "red": [
+        5
+      ],
+      "gold": [
+        3
+      ]
+    },
+    {
+      "type": "roll",
+      "range": "song",
+      "red": [
+        32,
+        141,
+        92
+      ],
+      "gold": [
+        41,
+        172,
+        102
+      ]
+    }
+  ]
+}

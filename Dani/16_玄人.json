@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "level": 16,
+  "name": "玄人",
+  "songs": [
+    {
+      "tja": "イオシス秋の爆食祭2024.tja",
+      "course": "oni",
+      "hidden": true
+    },
+    {
+      "tja": "Doom Noiz.tja",
+      "course": "oni",
+      "hidden": false
+    },
+    {
+      "tja": "resume：story.tja",
+      "course": "ura",
+      "hidden": true
+    }
+  ],
+  "gauge": {
+    "red": 100,
+    "gold": 100
+  },
+  "exams": [
+    {
+      "type": "ok",
+      "range": "total",
+      "red": [
+        50
+      ],
+      "gold": [
+        35
+      ]
+    },
+    {
+      "type": "bad",
+      "range": "total",
+      "red": [
+        6
+      ],
+      "gold": [
+        3
+      ]
+    },
+    {
+      "type": "roll",
+      "range": "song",
+      "red": [
+        96,
+        11,
+        110
+      ],
+      "gold": [
+        107,
+        12,
+        121
+      ]
+    }
+  ]
+}
